@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { useUrlState } from "@/lib/urlState";
+import { STORIES } from "@/lib/stories";
 import {
   loadCharts, loadComposite, loadGeoCatalog, loadInsights, loadMapValues, loadMetricCatalog,
   loadMetricDistributions, loadProfileShard, loadRegionCatalog, loadStateSummary,
@@ -35,6 +36,22 @@ function PanelSkeleton() {
   return <div style={{ height: 300, display: "grid", placeItems: "center" }} className="muted">Loading chart…</div>;
 }
 
+const StoryLoadingFallback = () => (
+  <div className="story-wrap"><p className="muted" style={{ padding: 40 }}>Loading the story…</p></div>
+);
+
+// Story articles are lazy client islands — each fetches its analytics payload on mount.
+const STORY_COMPONENTS: Record<string, ReturnType<typeof dynamic>> = {
+  "one-axis": dynamic(() => import("./spa/stories/OneAxisStory"), { loading: StoryLoadingFallback }),
+  connected: dynamic(() => import("./spa/stories/ConnectedStory"), { loading: StoryLoadingFallback }),
+  "four-americas": dynamic(() => import("./spa/stories/FourAmericasStory"), { loading: StoryLoadingFallback }),
+  gradient: dynamic(() => import("./spa/stories/GradientStory"), { loading: StoryLoadingFallback }),
+  "wealth-gap": dynamic(() => import("./spa/stories/WealthGapStory"), { loading: StoryLoadingFallback }),
+  "diagnosis-gap": dynamic(() => import("./spa/stories/DiagnosisGapStory"), { loading: StoryLoadingFallback }),
+  "tobacco-belt": dynamic(() => import("./spa/stories/TobaccoBeltStory"), { loading: StoryLoadingFallback }),
+  "red-blue-health": dynamic(() => import("./spa/stories/RedBlueHealthStory"), { loading: StoryLoadingFallback }),
+};
+
 function panelDefs(political: boolean, shortLabel = ""): { Cmp: any; title: string; sub: string }[] {
   if (political) {
     const isSwing = /swing/i.test(shortLabel);
@@ -57,9 +74,11 @@ function panelDefs(political: boolean, shortLabel = ""): { Cmp: any; title: stri
   ];
 }
 
-export default function AppClient() {
+export default function AppClient({ storiesIndex }: { storiesIndex?: ReactNode }) {
   const [state, setState] = useUrlState();
   const isSnap = state.view === "snapshot";
+  const isStories = state.view === "stories";
+  const activeStory = isStories && state.story && STORIES.some((s) => s.slug === state.story) ? state.story : undefined;
 
   const [catalog, setCatalog] = useState<MetricCatalog | null>(null);
   const [regions, setRegions] = useState<RegionCatalog | null>(null);
@@ -85,6 +104,12 @@ export default function AppClient() {
     loadMetricCatalog().then(setCatalog).catch(() => {});
     loadRegionCatalog().then(setRegions).catch(() => {});
     loadGeoCatalog().then(setGeo).catch(() => {});
+    // legacy ?p=methods / ?p=sources links → the in-page accordions
+    const p = new URLSearchParams(window.location.search).get("p");
+    if (p === "methods" || p === "sources") {
+      window.history.replaceState(null, "", `/#${p}`);
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    }
   }, []);
 
   const meta: MetricMeta | null = useMemo(() => {
@@ -100,9 +125,14 @@ export default function AppClient() {
   );
   const isPolitical = meta?.kind === "political";
 
-  // measure payloads (skip in snapshot view)
+  // return to the top when toggling views or opening/closing a story
   useEffect(() => {
-    if (!meta || isSnap) return;
+    window.scrollTo({ top: 0 });
+  }, [state.view, state.story]);
+
+  // measure payloads (skip in snapshot/stories views)
+  useEffect(() => {
+    if (!meta || isSnap || isStories) return;
     let alive = true;
     setLoading(true);
     Promise.all([loadMapValues(meta.metric_id), loadCharts(meta.metric_id), loadInsights(meta.metric_id)])
@@ -112,7 +142,7 @@ export default function AppClient() {
       })
       .catch(() => alive && setLoading(false));
     return () => { alive = false; };
-  }, [meta, isSnap]);
+  }, [meta, isSnap, isStories]);
 
   // snapshot base payloads (composite map + distributions + state means)
   useEffect(() => {
@@ -168,28 +198,57 @@ export default function AppClient() {
   const placeOf = (rec?: GeoCatalog["zips"][string]) => (rec ? [rec[0], rec[1]].filter(Boolean).join(", ") : "");
   const stateMeans = profile?.c[1] && stateSummary ? stateSummary[profile.c[1]] : undefined;
 
+  const heading = isStories
+    ? "What the ZIP-code data teaches"
+    : isSnap
+      ? "A health snapshot for any ZIP code"
+      : "U.S. health outcomes, ZIP code by ZIP code";
+  const subCopy = isStories
+    ? `Eight data-driven essays precomputed from the full ${healthMetrics.length}-measure × 32k-area matrix — the structure behind the map, from the deprivation axis to presidential politics.`
+    : isSnap
+      ? `Pick a ZIP code to see where it lands across ${healthMetrics.length} health and social-need measures, with ACS demographics, ADI context, 2016–2020 presidential lean, and one experimental composite score.`
+      : `${healthMetrics.length} burden-oriented health measures plus presidential vote margin and swing, across 32,409 ZIP/ZCTA areas — mapped against the national average, neighborhood deprivation, and local demographic context.`;
+
+  const StoryCmp = activeStory ? STORY_COMPONENTS[activeStory] : null;
+
   return (
     <main id="main" className="app">
-      <header className="masthead">
-        <span className="kicker">ZIP Health Atlas</span>
-        <h1>{isSnap ? "A health snapshot for any ZIP code" : "U.S. health outcomes, ZIP code by ZIP code"}</h1>
-        <p className="sub">
-          {isSnap
-            ? `Pick a ZIP code to see where it lands across ${healthMetrics.length} health and social-need measures, with ACS demographics, ADI context, 2016–2020 presidential lean, and one experimental composite score.`
-            : `${healthMetrics.length} burden-oriented health measures plus presidential vote margin and swing, across 32,409 ZIP/ZCTA areas — mapped against the national average, neighborhood deprivation, and local demographic context.`}
-        </p>
-      </header>
+      {!activeStory && (
+        <header className="masthead">
+          <span className="kicker">ZIP Health Atlas</span>
+          <h1>{heading}</h1>
+          <p className="sub">{subCopy}</p>
+        </header>
+      )}
 
       <div className="view-tabs" role="tablist" aria-label="Choose a view">
-        <button role="tab" aria-selected={isSnap} className={isSnap ? "active" : ""} onClick={() => setState({ view: "snapshot" })}>
+        <button role="tab" aria-selected={isSnap} className={isSnap ? "active" : ""} onClick={() => setState({ view: "snapshot", story: undefined })}>
           ZIP health snapshot
         </button>
-        <button role="tab" aria-selected={!isSnap} className={!isSnap ? "active" : ""} onClick={() => setState({ view: "measure" })}>
+        <button role="tab" aria-selected={!isSnap && !isStories} className={!isSnap && !isStories ? "active" : ""} onClick={() => setState({ view: "measure", story: undefined })}>
           Explore by measure
+        </button>
+        <button role="tab" aria-selected={isStories} className={isStories ? "active" : ""} onClick={() => setState({ view: "stories" })}>
+          Stories
         </button>
       </div>
 
-      {isSnap ? (
+      {isStories ? (
+        <section className="stories-pane" aria-label="Data stories">
+          {StoryCmp ? (
+            <>
+              <button type="button" className="btn story-back" onClick={() => setState({ story: undefined })}>
+                ← All stories
+              </button>
+              <StoryCmp />
+            </>
+          ) : (
+            storiesIndex ?? (
+              <p className="muted" style={{ padding: 40 }}>Loading stories…</p>
+            )
+          )}
+        </section>
+      ) : isSnap ? (
         <div className="controls">
           <div className="field" style={{ flex: "1 1 280px", maxWidth: 360 }}>
             <label>Find a ZIP</label>
@@ -206,10 +265,11 @@ export default function AppClient() {
         <Controls metrics={catalog.metrics} regions={regions?.regions ?? []} state={state} onChange={setState} />
       )}
 
-      {!isSnap && metricInvalid && (
+      {!isSnap && !isStories && metricInvalid && (
         <div className="notice" role="status">Unknown measure “{state.metric}”. Showing <strong>{meta.label}</strong> instead.</div>
       )}
 
+      {!isStories && (
       <div className="stage">
         <div className="map-col">
           <div
@@ -293,6 +353,7 @@ export default function AppClient() {
                     backfilled={geoRec?.[10]}
                     adi={geoRec?.[11]}
                     income={geoRec?.[12]}
+                    politics={profile?.p ?? undefined}
                     meta={meta}
                     value={selectedValue}
                     percentile={selectedPct}
@@ -305,6 +366,7 @@ export default function AppClient() {
           )}
         </aside>
       </div>
+      )}
 
       {isSnap && selected && profile && dists && (
         <section className="snap-strips-section" aria-label="Per-measure health snapshot">
@@ -318,7 +380,7 @@ export default function AppClient() {
         </section>
       )}
 
-      {!isSnap && (
+      {!isSnap && !isStories && (
         <section className="panels" aria-label="Analytical panels">
           {charts &&
             panelDefs(!!isPolitical, meta.short_label).map(({ Cmp, title, sub }) => (

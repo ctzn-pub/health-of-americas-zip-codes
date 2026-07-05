@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import SpaShell from "@/components/spa/SpaShell";
-import LandingSection from "@/components/spa/sections/LandingSection";
+import AppClient from "@/components/AppClient";
+import AccordionSection from "@/components/spa/AccordionSection";
 import MethodsSection from "@/components/spa/sections/MethodsSection";
 import SourcesSection from "@/components/spa/sections/SourcesSection";
 import StoriesIndexSection from "@/components/spa/sections/StoriesIndexSection";
@@ -13,27 +13,39 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-// Single-page app: every section renders on "/" and is switched client-side by the `p`
-// query param (?p=atlas | stories | story&s=<slug> | methods | sources). The prose
-// sections below are server-rendered at build with real numbers; the atlas and the
-// story articles are client islands that fetch their payloads on demand.
+// One page, no routing: the atlas IS the page. Views toggle in place
+// (?view=measure | snapshot | stories, ?story=<slug> inside stories), and methods /
+// sources collapse into accordions below the atlas — server-rendered at build so the
+// single HTML document still carries real, crawlable content and numbers.
 export default function Page() {
   return (
-    <Suspense
-      fallback={
-        <main id="main" className="app">
-          <p className="muted" style={{ padding: 40 }}>Loading…</p>
-        </main>
-      }
-    >
-      <SpaShell
-        sections={{
-          home: <LandingSection />,
-          stories: <StoriesIndexSection />,
-          methods: <MethodsSection />,
-          sources: <SourcesSection />,
-        }}
-      />
-    </Suspense>
+    <>
+      <Suspense
+        fallback={
+          <main id="main" className="app">
+            <p className="muted" style={{ padding: 40 }}>Loading the atlas…</p>
+          </main>
+        }
+      >
+        <AppClient storiesIndex={<StoriesIndexSection />} />
+      </Suspense>
+
+      <div className="acc-stack">
+        <AccordionSection
+          id="methods"
+          title="Methods & limitations"
+          sub="Modeled estimates, ZIP vs ZCTA, view modes, the political layers, missingness"
+        >
+          <MethodsSection />
+        </AccordionSection>
+        <AccordionSection
+          id="sources"
+          title="Sources & provenance"
+          sub="Underlying files, vintages, and per-measure provenance"
+        >
+          <SourcesSection />
+        </AccordionSection>
+      </div>
+    </>
   );
 }

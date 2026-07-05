@@ -4,27 +4,25 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { NAV, SITE } from "@/lib/site";
 
-// Global navigation for the single-page app. Sections live on "/" behind the `p` query
-// param, so the active link is derived from search params (wrapped in Suspense for the
-// static export). The markup still prerenders into static HTML, so crawlers see real nav.
+// Global navigation for the one-page app: Atlas and Stories toggle the in-page view,
+// Methods and Sources jump to the collapsible sections at the bottom. Markup prerenders
+// into the static HTML, so crawlers see real nav.
 function NavLinks() {
   const sp = useSearchParams();
-  const page = sp.get("p") ?? "home";
+  const view = sp.get("view") ?? (sp.get("p") === "story" || sp.get("p") === "stories" ? "stories" : "measure");
+  const activeKey = view === "stories" ? "stories" : "atlas";
   return (
     <nav className="site-nav" aria-label="Primary">
-      {NAV.map((item, i) => {
-        const active = !item.cta && (page === item.page || (item.page === "stories" && page === "story"));
-        return (
-          <Link
-            key={`${item.page}-${i}`}
-            href={item.href}
-            className={item.cta ? "nav-cta" : undefined}
-            aria-current={active ? "page" : undefined}
-          >
+      {NAV.map((item) =>
+        item.href.startsWith("#") ? (
+          // plain anchor: Link's pushState never fires hashchange, which the accordions rely on
+          <a key={item.key} href={item.href}>{item.label}</a>
+        ) : (
+          <Link key={item.key} href={item.href} aria-current={item.key === activeKey ? "page" : undefined}>
             {item.label}
           </Link>
-        );
-      })}
+        ),
+      )}
     </nav>
   );
 }
@@ -32,11 +30,13 @@ function NavLinks() {
 function StaticNav() {
   return (
     <nav className="site-nav" aria-label="Primary">
-      {NAV.map((item, i) => (
-        <Link key={`${item.page}-${i}`} href={item.href} className={item.cta ? "nav-cta" : undefined}>
-          {item.label}
-        </Link>
-      ))}
+      {NAV.map((item) =>
+        item.href.startsWith("#") ? (
+          <a key={item.key} href={item.href}>{item.label}</a>
+        ) : (
+          <Link key={item.key} href={item.href}>{item.label}</Link>
+        ),
+      )}
     </nav>
   );
 }

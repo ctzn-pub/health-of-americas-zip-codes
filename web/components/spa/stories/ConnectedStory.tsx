@@ -17,7 +17,7 @@ export default function ConnectedStory() {
   const top = corr.top_pairs[0];
 
   return (
-    <main id="main" className="story-wrap">
+    <div className="story-wrap">
       <StoryHead
         story={story}
         meta={`Spearman rank correlations · ${corr.n.toLocaleString()} ZIP/ZCTA areas · hierarchically ordered`}
@@ -74,7 +74,7 @@ export default function ConnectedStory() {
               Age 65+ is the great exception: it flips sign depending on whether a condition
               accumulates with age (cancer, heart disease) or concentrates among the young (loneliness,
               skipped checkups, housing insecurity). That split is exactly the second principal axis in{" "}
-              <a href="/?p=story&s=one-axis">the one-axis story</a>.
+              <a href="/?view=stories&story=one-axis">the one-axis story</a>.
             </>
           }
         >
@@ -91,6 +91,6 @@ export default function ConnectedStory() {
         <StoryCaveat />
         <StoryNext current="connected" />
       </article>
-    </main>
+    </div>
   );
 }

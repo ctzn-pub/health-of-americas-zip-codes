@@ -43,7 +43,7 @@ export default function WealthGapStory() {
   const noCheckup = byMetric.get("no_checkup")!;
 
   return (
-    <main id="main" className="story-wrap">
+    <div className="story-wrap">
       <StoryHead
         story={story}
         meta={`Composite socioeconomic advantage score · ${wealth.n.toLocaleString()} complete resident ZIP/ZCTA areas · top and bottom deciles`}
@@ -185,6 +185,6 @@ export default function WealthGapStory() {
         <StoryCaveat />
         <StoryNext current="wealth-gap" />
       </article>
-    </main>
+    </div>
   );
 }

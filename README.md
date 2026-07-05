@@ -15,17 +15,17 @@ and swing from precinct returns disaggregated to ZCTAs).
     recolors via feature-state, with four D3 analytical panels and an insight rail. The political
     layers use a red–blue diverging ramp (U.S. electoral convention) with politics-aware panel copy,
     and are excluded from the composite health score and the 26-measure analyses.
-- **Stories** (`/?p=stories`): eight data-driven essays precomputed from the full matrix — the
+- **Stories** (a third view toggle, `/?view=stories`): eight data-driven essays — the
   single PCA axis behind most place-based health differences (57% of variance), the correlation
   structure of the measures, four k-means **community archetypes**, the ADI deprivation gradient,
   the wealth gap, two outcome stories, and **"The political geography of health"** (all 26 measures
   vs the 2020 margin and 2016→2020 swing, lean-bin gradients, and the realignment curve).
 - Selecting a ZIP **zooms the map to its metro**; state is URL-shareable.
-- **Single-page app**: every section lives on `/` behind the `p` query param — `/?p=atlas`,
-  `/?p=stories`, `/?p=story&s=<slug>`, `/?p=methods`, `/?p=sources` — with old paths redirected via
-  `vercel.json`. The landing, methods, sources, and stories-index sections are still server-rendered
-  at build with **real content and numbers**; the atlas and the story articles are lazy client
-  islands that fetch their JSON payloads on demand.
+- **One page, no routing**: `/` opens straight into the atlas; ZIP snapshot / measure explorer /
+  Stories are in-place view toggles, and methods & sources collapse into accordions at the bottom
+  of the same page (`/#methods`, `/#sources`). The stories index and both accordions are still
+  server-rendered at build with **real content and numbers**; the atlas and the story articles are
+  lazy client islands that fetch their JSON payloads on demand.
 
 ## Repository layout
 
@@ -74,21 +74,22 @@ npm run dev        # http://localhost:3000
 npm run build      # static export → web/out
 ```
 
-## Routes (single-page app)
+## One page, no routes
 
-Everything is served from `/`; the client switches sections on the `p` query param:
+The atlas **is** the page: `/` opens straight into the interactive map. Everything else toggles in
+place —
 
-| URL                  | Rendering          | What it is                                                     |
-| -------------------- | ------------------ | -------------------------------------------------------------- |
-| `/`                  | static             | Editorial landing page with live headline stats from the manifest |
-| `/?p=atlas`          | client island      | Interactive atlas — `&view=snapshot` (by place) or measure mode with `&metric=`, `&mode=`, `&region=`, `&selected=` |
-| `/?p=stories`        | static             | Stories index with per-story stats                             |
-| `/?p=story&s=<slug>` | lazy client island | A story article (fetches its analytics payload on demand)      |
-| `/?p=methods`        | static             | Methodology, ZIP-vs-ZCTA, political layers, missingness, accessibility |
-| `/?p=sources`        | static             | Underlying files and per-measure provenance                    |
+| URL                            | What you see                                                        |
+| ------------------------------ | ------------------------------------------------------------------- |
+| `/`                            | The atlas (measure view) with `?metric=`, `?mode=`, `?region=`, `?selected=` |
+| `/?view=snapshot`              | The by-place ZIP snapshot view (`&selected=<zip>`)                  |
+| `/?view=stories`               | The Stories toggle — eight essay cards rendered in place            |
+| `/?view=stories&story=<slug>`  | A story article inline (lazy client island, fetches its payload)    |
+| `/#methods` · `/#sources`      | Collapsible methods / sources accordions at the bottom of the page  |
 
-Old paths (`/atlas`, `/methods`, `/sources`, `/stories/*`) 308-redirect to their `?p=` equivalents
-via `vercel.json`. `sitemap.xml`, `robots.txt`, and an Open Graph image are generated at build.
+Old paths (`/atlas`, `/methods`, `/sources`, `/stories/*`) and the interim `?p=` params
+308-redirect / translate to these forms. `sitemap.xml`, `robots.txt`, and an Open Graph image are
+generated at build.
 
 ## Precomputed snapshot data
 

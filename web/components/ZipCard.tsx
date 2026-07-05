@@ -10,6 +10,7 @@ interface Props {
   county?: string | null;
   adi?: number | null;
   income?: number | null;
+  politics?: [number | null, number | null, number | null]; // [margin_2016, margin_2020, swing] pct pts
   source?: string;
   backfilled?: number;
   meta: MetricMeta;
@@ -36,6 +37,7 @@ export default function ZipCard({
   county,
   adi,
   income,
+  politics,
   source,
   backfilled,
   meta,
@@ -65,6 +67,11 @@ export default function ZipCard({
         {county && <span>{county}</span>}
         {adi != null && <span>ADI {one.format(adi)}</span>}
         {income != null && <span>{money.format(income)} median income</span>}
+        {politics?.[1] != null && (
+          <span className={politics[1] > 0 ? "pol-dem" : politics[1] < 0 ? "pol-rep" : undefined}>
+            2020: {marginFmt(politics[1])}
+          </span>
+        )}
         {provenance && <span>{provenance}</span>}
       </div>
       {value == null ? (

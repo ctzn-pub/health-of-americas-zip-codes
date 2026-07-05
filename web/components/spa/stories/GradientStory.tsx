@@ -21,7 +21,7 @@ export default function GradientStory() {
   const steep = grad.metrics.filter((m) => (m.rel ?? 0) >= 2).length;
 
   return (
-    <main id="main" className="story-wrap">
+    <div className="story-wrap">
       <StoryHead
         story={story}
         meta="Population-weighted means by Area Deprivation Index decile · all 26 measures on one scale"
@@ -78,6 +78,6 @@ export default function GradientStory() {
         <StoryCaveat />
         <StoryNext current="gradient" />
       </article>
-    </main>
+    </div>
   );
 }

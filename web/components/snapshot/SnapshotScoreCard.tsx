@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { fmtPop, marginFmt, ordinal, valueFmt } from "@/lib/format";
 import { ARCHETYPES, readScore, standouts } from "@/lib/snapshot";
+import { storyPath } from "@/lib/stories";
 import { ARCH_COLORS } from "@/components/stories/storyShared";
 import type { MetricMeta, ProfileZip } from "@/lib/types";
 import ScoreGauge from "./ScoreGauge";
@@ -83,15 +84,30 @@ export default function SnapshotScoreCard({
         {!hasGeometry && <span>Not in map tiles</span>}
       </div>
       {profile.p && (profile.p[1] != null || profile.p[0] != null) && (
-        <div className="quality-strip" aria-label="Presidential lean (two-party margin)">
-          {profile.p[1] != null && <span>2020: {marginFmt(profile.p[1])}</span>}
-          {profile.p[0] != null && <span>2016: {marginFmt(profile.p[0])}</span>}
-          {profile.p[2] != null && (
-            <span>
-              swing {profile.p[2] > 0 ? "D" : profile.p[2] < 0 ? "R" : ""}
-              {profile.p[2] === 0 ? "±0.0" : `+${Math.abs(profile.p[2]).toFixed(1)}`}
-            </span>
-          )}
+        <div className="snap-politics" aria-label="Presidential lean (two-party margin)">
+          <h4>Presidential lean</h4>
+          <div className="pol-row">
+            {profile.p[0] != null && (
+              <span className={`pol-badge ${profile.p[0] > 0 ? "dem" : "rep"}`}>
+                <small>2016</small> {marginFmt(profile.p[0])}
+              </span>
+            )}
+            {profile.p[0] != null && profile.p[1] != null && <span className="pol-arrow" aria-hidden="true">→</span>}
+            {profile.p[1] != null && (
+              <span className={`pol-badge ${profile.p[1] > 0 ? "dem" : "rep"}`}>
+                <small>2020</small> {marginFmt(profile.p[1])}
+              </span>
+            )}
+            {profile.p[2] != null && (
+              <span className={`pol-swing ${profile.p[2] > 0 ? "dem" : "rep"}`}>
+                swing {profile.p[2] > 0 ? "D" : "R"}+{Math.abs(profile.p[2]).toFixed(1)}
+              </span>
+            )}
+          </div>
+          <p className="pol-note">
+            Two-party presidential margin, precinct returns disaggregated to this ZCTA —{" "}
+            <Link href={storyPath("red-blue-health")}>how politics tracks health ›</Link>
+          </p>
         </div>
       )}
       {score ? (
@@ -113,7 +129,7 @@ export default function SnapshotScoreCard({
         <p className="arch-chip-row">
           <Link
             className="arch-chip"
-            href="/?p=story&s=four-americas"
+            href={storyPath("four-americas")}
             title="One of four community archetypes from clustering all 26 measures — read the story"
           >
             <span className="arch-dot" style={{ background: ARCH_COLORS[profile.a[0]] }} aria-hidden="true" />

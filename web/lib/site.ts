@@ -9,20 +9,16 @@ export const SITE = {
   name: "Health of America's ZIP Codes",
   short: "ZIP Health Atlas",
   tagline:
-    "A map-first atlas of ZIP/ZCTA health, social needs, demographics, and neighborhood deprivation.",
+    "A map-first atlas of ZIP/ZCTA health, social needs, demographics, neighborhood deprivation, and presidential politics.",
   description:
-    "An interactive atlas of 26 burden-oriented health and social-need measures across 32,409 U.S. ZIP/ZCTA areas, with ACS demographics, ADI context, state comparisons, and modeled CDC PLACES-style estimates.",
+    "An interactive one-page atlas of 26 burden-oriented health and social-need measures plus 2016/2020 presidential margins across 32,409 U.S. ZIP/ZCTA areas, with ACS demographics, ADI context, state comparisons, and modeled CDC PLACES-style estimates.",
 } as const;
 
-// SPA navigation: every section lives on "/" and is addressed by the `p` query param.
-export type PageId = "home" | "atlas" | "stories" | "story" | "methods" | "sources";
-
-export const pagePath = (p: PageId) => (p === "home" ? "/" : `/?p=${p}`);
-
-export const NAV: { href: string; page: PageId; label: string; cta?: boolean }[] = [
-  { href: pagePath("atlas"), page: "atlas", label: "Atlas" },
-  { href: pagePath("stories"), page: "stories", label: "Stories" },
-  { href: pagePath("methods"), page: "methods", label: "Methods" },
-  { href: pagePath("sources"), page: "sources", label: "Sources" },
-  { href: pagePath("atlas"), page: "atlas", label: "Open the atlas", cta: true },
+// One-page app: the atlas is "/", stories are a view toggle, methods/sources are
+// in-page accordions reached by hash.
+export const NAV: { href: string; key: string; label: string }[] = [
+  { href: "/", key: "atlas", label: "Atlas" },
+  { href: "/?view=stories", key: "stories", label: "Stories" },
+  { href: "#methods", key: "methods", label: "Methods" },
+  { href: "#sources", key: "sources", label: "Sources" },
 ];

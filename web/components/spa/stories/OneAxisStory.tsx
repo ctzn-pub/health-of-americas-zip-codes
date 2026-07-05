@@ -19,7 +19,7 @@ export default function OneAxisStory() {
   const pct = (v: number) => `${Math.round(v * 100)}%`;
 
   return (
-    <main id="main" className="story-wrap">
+    <div className="story-wrap">
       <StoryHead
         story={story}
         meta={`Principal component analysis · ${pca.n.toLocaleString()} ZIP/ZCTA areas with complete data on all 26 measures`}
@@ -116,6 +116,6 @@ export default function OneAxisStory() {
         <StoryCaveat />
         <StoryNext current="one-axis" />
       </article>
-    </main>
+    </div>
   );
 }

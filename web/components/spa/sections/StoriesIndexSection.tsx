@@ -69,17 +69,13 @@ export default async function StoriesIndexSection() {
   };
 
   return (
-    <main id="main" className="prose-wrap">
-      <header className="page-head">
-        <p className="eyebrow">Stories</p>
-        <h1>What the data teaches</h1>
-        <p className="page-lede">
-          The atlas lets you look anything up. These pieces do the opposite: they start from the full
-          matrix — 26 measures × {corr.n.toLocaleString()} ZIP/ZCTA areas — and show the structure
-          that emerges. Everything is precomputed from the same public payloads the atlas serves; every
-          figure is interactive.
-        </p>
-      </header>
+    <div className="stories-index">
+      <p className="muted" style={{ margin: "0 0 16px", fontSize: 13.5, maxWidth: "78ch" }}>
+        The atlas lets you look anything up. These pieces do the opposite: they start from the full
+        matrix — 26 measures × {corr.n.toLocaleString()} ZIP/ZCTA areas — and show the structure that
+        emerges. Everything is precomputed from the same public payloads the atlas serves; every
+        figure is interactive.
+      </p>
       <div className="story-cards">
         {STORIES.map((s) => (
           <Link key={s.slug} className="story-card" href={storyPath(s.slug)}>
@@ -94,9 +90,9 @@ export default async function StoriesIndexSection() {
       </div>
       <p className="muted" style={{ marginTop: 28, fontSize: 13, maxWidth: "72ch" }}>
         All findings are ecological (about places, not people) and based on model-based small-area
-        estimates. Methods, caveats, and reproduction steps are documented on the{" "}
-        <Link href="/?p=methods">methods page</Link>.
+        estimates. Methods, caveats, and reproduction steps are documented in the{" "}
+        <a href="#methods">methods section</a> below.
       </p>
-    </main>
+    </div>
   );
 }

@@ -17,7 +17,7 @@ export default function FourAmericasStory() {
   const [suburbs, metro, towns, leftBehind] = arch.clusters;
 
   return (
-    <main id="main" className="story-wrap">
+    <div className="story-wrap">
       <StoryHead
         story={story}
         meta={`k-means on all 26 standardized measures (fit on ${arch.n.toLocaleString()} complete-case areas, k = ${arch.k} by silhouette) · ${arch.n_assigned.toLocaleString()} areas assigned`}
@@ -96,6 +96,6 @@ export default function FourAmericasStory() {
         <StoryCaveat />
         <StoryNext current="four-americas" />
       </article>
-    </main>
+    </div>
   );
 }

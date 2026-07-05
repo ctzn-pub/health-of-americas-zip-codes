@@ -16,7 +16,7 @@ export default function DiagnosisGapStory() {
   const hi = mh.states.slice(-3).reverse();
 
   return (
-    <main id="main" className="story-wrap">
+    <div className="story-wrap">
       <StoryHead
         story={story}
         meta={`Diagnosed depression vs frequent mental distress · ${mh.n.toLocaleString()} ZIP/ZCTA areas`}
@@ -103,6 +103,6 @@ export default function DiagnosisGapStory() {
         <StoryCaveat />
         <StoryNext current="diagnosis-gap" />
       </article>
-    </main>
+    </div>
   );
 }

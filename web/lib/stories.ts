@@ -58,5 +58,5 @@ export const STORIES: StoryDef[] = [
   },
 ];
 
-// SPA: every story renders inside the single page, addressed by query params.
-export const storyPath = (slug: string) => `/?p=story&s=${slug}`;
+// One-page app: stories are a view toggle on "/", addressed by query params.
+export const storyPath = (slug: string) => `/?view=stories&story=${slug}`;

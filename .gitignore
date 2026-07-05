@@ -25,3 +25,4 @@ web/test-results/
 web/playwright-report/
 web/verify-shots/
 web/tsconfig.tsbuildinfo
+.vercel

@@ -37,7 +37,7 @@ export default function RedBlueHealthStory() {
   const rgv = politics.shift_right[0];
 
   return (
-    <main id="main" className="story-wrap">
+    <div className="story-wrap">
       <StoryHead
         story={story}
         meta={`Precinct returns disaggregated to ZCTAs (Fekrazad 2025) · ${nat.n_margin.toLocaleString()} ZIP/ZCTA areas with a 2020 margin · ${nat.n_swing.toLocaleString()} with a 2016→2020 swing`}
@@ -177,13 +177,13 @@ export default function RedBlueHealthStory() {
           individual voters of either party. Politics here is a lens on the same underlying
           geography the rest of the atlas maps — age, density, deprivation, and race — not a cause
           of it. You can map both political layers yourself in the{" "}
-          <Link href="/?p=atlas&metric=pres_margin_2020">atlas</Link> (2020 margin, 2016→2020
+          <Link href="/?metric=pres_margin_2020">atlas</Link> (2020 margin, 2016→2020
           swing), and every ZIP snapshot now carries its presidential lean.
         </p>
 
         <StoryCaveat />
         <StoryNext current="red-blue-health" />
       </article>
-    </main>
+    </div>
   );
 }

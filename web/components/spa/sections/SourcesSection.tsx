@@ -12,7 +12,7 @@ export default async function SourcesSection() {
   const rows = coverage.rows;
 
   return (
-    <main id="main">
+    <div>
       <div className="prose-wrap">
         <header className="page-head">
           <span className="eyebrow">Sources</span>
@@ -175,11 +175,11 @@ export default async function SourcesSection() {
             does not require a new PMTiles file.
           </p>
           <p>
-            See <Link href="/?p=methods">Methods &amp; limitations</Link> for how these numbers should and
-            should not be read, or open the <Link href="/?p=atlas">interactive atlas</Link>.
+            See <a href="#methods">Methods &amp; limitations</a> for how these numbers should and
+            should not be read, or open the <Link href="/">interactive atlas</Link>.
           </p>
         </article>
       </div>
-    </main>
+    </div>
   );
 }

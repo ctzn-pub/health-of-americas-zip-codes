@@ -11,7 +11,7 @@ export default async function MethodsSection() {
   const backfilledCells = coverage.rows?.total_backfilled_cells ?? 0;
 
   return (
-    <main id="main">
+    <div>
       <div className="prose-wrap">
         <header className="page-head">
           <span className="eyebrow">Methods</span>
@@ -129,7 +129,7 @@ export default async function MethodsSection() {
             and are deliberately excluded from the composite health score, the 26-measure
             correlation/PCA/clustering analyses, and the per-ZIP measure strips. They appear on the
             map, in each ZIP&apos;s snapshot header, and in the{" "}
-            <Link href="/?p=story&s=red-blue-health">politics &amp; health story</Link>. As with
+            <Link href="/?view=stories&story=red-blue-health">politics &amp; health story</Link>. As with
             everything else here, the associations are ecological — about places, not voters.
           </p>
 
@@ -182,7 +182,7 @@ export default async function MethodsSection() {
         <article className="prose">
           <h2>The stories: PCA, clustering, and gradients</h2>
           <p>
-            The <Link href="/?p=stories">stories section</Link> is precomputed by{" "}
+            The <Link href="/?view=stories">stories section</Link> is precomputed by{" "}
             <code>data-prep/analytics_v3.py</code> from the same parquet source, over the ~23,800
             ZIP/ZCTA areas with complete data on all 26 measures (coverage is limited mainly by the
             newer social-needs measures, especially loneliness, so the smallest rural areas are
@@ -255,11 +255,11 @@ export default async function MethodsSection() {
 
           <p>
             For the underlying files and per-measure provenance, see{" "}
-            <Link href="/?p=sources">Sources &amp; provenance</Link>. To explore the data, open the{" "}
-            <Link href="/?p=atlas">interactive atlas</Link>.
+            <a href="#sources">Sources &amp; provenance</a>. To explore the data, open the{" "}
+            <Link href="/">interactive atlas</Link>.
           </p>
         </article>
       </div>
-    </main>
+    </div>
   );
 }

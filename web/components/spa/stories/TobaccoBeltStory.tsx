@@ -16,7 +16,7 @@ export default function TobaccoBeltStory() {
   const over = sm.states.slice(-3).reverse();
 
   return (
-    <main id="main" className="story-wrap">
+    <div className="story-wrap">
       <StoryHead
         story={story}
         meta={`Smoking vs Area Deprivation Index, quadratic fit + residuals · ${sm.n.toLocaleString()} ZIP/ZCTA areas`}
@@ -101,6 +101,6 @@ export default function TobaccoBeltStory() {
         <StoryCaveat />
         <StoryNext current="tobacco-belt" />
       </article>
-    </main>
+    </div>
   );
 }

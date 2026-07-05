@@ -6,15 +6,15 @@
   "framework": null,
   "trailingSlash": true,
   "redirects": [
-    { "source": "/atlas", "destination": "/?p=atlas", "permanent": true },
-    { "source": "/atlas/", "destination": "/?p=atlas", "permanent": true },
-    { "source": "/methods", "destination": "/?p=methods", "permanent": true },
-    { "source": "/methods/", "destination": "/?p=methods", "permanent": true },
-    { "source": "/sources", "destination": "/?p=sources", "permanent": true },
-    { "source": "/sources/", "destination": "/?p=sources", "permanent": true },
-    { "source": "/stories", "destination": "/?p=stories", "permanent": true },
-    { "source": "/stories/", "destination": "/?p=stories", "permanent": true },
-    { "source": "/stories/:slug", "destination": "/?p=story&s=:slug", "permanent": true },
-    { "source": "/stories/:slug/", "destination": "/?p=story&s=:slug", "permanent": true }
+    { "source": "/atlas", "destination": "/", "permanent": true },
+    { "source": "/atlas/", "destination": "/", "permanent": true },
+    { "source": "/methods", "destination": "/#methods", "permanent": true },
+    { "source": "/methods/", "destination": "/#methods", "permanent": true },
+    { "source": "/sources", "destination": "/#sources", "permanent": true },
+    { "source": "/sources/", "destination": "/#sources", "permanent": true },
+    { "source": "/stories", "destination": "/?view=stories", "permanent": true },
+    { "source": "/stories/", "destination": "/?view=stories", "permanent": true },
+    { "source": "/stories/:slug", "destination": "/?view=stories&story=:slug", "permanent": true },
+    { "source": "/stories/:slug/", "destination": "/?view=stories&story=:slug", "permanent": true }
   ]
 }
