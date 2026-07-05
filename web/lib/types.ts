@@ -232,7 +232,9 @@ export interface ProfileZip {
     number | null,
     boolean | null,
   ]; // [ADI, income, poverty, college, Black, Hispanic, 65+, urban]
-  p?: [number | null, number | null, number | null] | null; // [margin_2016, margin_2020, swing] pct pts, + = more Democratic
+  // [margin_2016, margin_2020, swing, natl pct of 2020 margin, natl pct of swing]
+  // margins in pct points, + = more Democratic; older shards may carry only 3 slots
+  p?: (number | null)[] | null;
   m: ([number, number] | null)[]; // per health metric, in metric_catalog order (kind !== "political"): [value, national pct] | null
 }
 export interface ProfileShard {
@@ -495,6 +497,29 @@ export interface PoliticsPayload {
   swing_curve: { points: ScatterPoint[]; loess: [number, number][]; x: string; y: string };
   shift_right: { zip: string; city: string; state: string; population: number; m16: number; m20: number; swing: number }[];
   shift_left: { zip: string; city: string; state: string; population: number; m16: number; m20: number; swing: number }[];
+  turnout: {
+    method: string;
+    rho: number | null; // Spearman: burden score vs votes-per-resident
+    n: number;
+    deciles: {
+      decile: number; // 1 = least burden
+      n: number;
+      population: number;
+      votes_per_resident: number;
+      margin: number;
+      swing: number | null;
+    }[];
+  };
+  swing_facets: {
+    method: string;
+    facets: {
+      key: string;
+      label: string;
+      rho: number | null;
+      n: number;
+      loess: [number, number][]; // [context percentile 0..100, swing pts]
+    }[];
+  };
   generated_at: string;
 }
 

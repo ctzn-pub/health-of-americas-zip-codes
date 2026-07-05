@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 import { useId } from "react";
-import { colorScale, SEQUENTIAL, BENCH, HALO } from "@/lib/colors";
+import { colorScale, SEQUENTIAL, POLITICAL, BENCH, HALO } from "@/lib/colors";
 import type { MetricDistribution, MetricMeta } from "@/lib/types";
 
 const H = 56;
@@ -46,8 +46,10 @@ export default function StripPlot({
   hi = Math.max(hi, ...marks);
   if (hi <= lo) { lo = dist.min; hi = dist.max; }
 
+  const political = meta.scale_kind === "diverging";
   const x = d3.scaleLinear().domain([lo, hi]).range([PAD, PAD + innerW]).clamp(true);
-  const color = colorScale("rate", meta.domain, meta.benchmark);
+  const color = colorScale("rate", meta.domain, meta.benchmark, political ? "diverging" : "sequential");
+  const ramp = political ? POLITICAL : SEQUENTIAL;
 
   // distribution ridgeline from the histogram bins, smoothed
   const visBins = dist.bins.filter((b) => (b[0] + b[1]) / 2 >= lo && (b[0] + b[1]) / 2 <= hi);
@@ -70,9 +72,14 @@ export default function StripPlot({
     <svg width={width} height={H} role="img" aria-label={ariaLabel(meta, value, stateAbbr, stateMean, dist.benchmark)} style={{ display: "block", overflow: "visible" }}>
       <defs>
         <linearGradient id={`ramp-${gid}`} x1="0" x2="1" y1="0" y2="0">
-          {SEQUENTIAL.map((c, i) => (
-            <stop key={i} offset={`${(i / (SEQUENTIAL.length - 1)) * 100}%`} stopColor={c} />
-          ))}
+          {/* political strips place the ramp stops at their true positions so white sits at
+              margin 0 even when the visible domain is asymmetric */}
+          {ramp.map((c, i) => {
+            const t = political
+              ? Math.max(0, Math.min(1, (meta.domain[0] + ((meta.domain[2] - meta.domain[0]) * i) / (ramp.length - 1) - lo) / (hi - lo || 1)))
+              : i / (ramp.length - 1);
+            return <stop key={i} offset={`${t * 100}%`} stopColor={c} />;
+          })}
         </linearGradient>
       </defs>
 
@@ -108,6 +115,10 @@ export default function StripPlot({
 
 function ariaLabel(meta: MetricMeta, value: number | null, st: string, stMean: number | null, bench: number) {
   if (value == null) return `${meta.label}: no estimate for this ZIP.`;
+  if (meta.scale_kind === "diverging") {
+    const lean = (v: number) => (v > 0 ? `D plus ${Math.abs(v).toFixed(1)}` : v < 0 ? `R plus ${Math.abs(v).toFixed(1)}` : "even");
+    return `${meta.label}: ${lean(value)} for this ZIP, against a national ${lean(bench)}${stMean != null ? ` and a ${st} average of ${lean(stMean)}` : ""}.`;
+  }
   const unit = meta.unit === "percent" ? "%" : "";
   const vs = value < bench ? "below" : value > bench ? "above" : "at";
   return `${meta.label}: ${value}${unit} for this ZIP, ${vs} the U.S. average of ${bench}${unit}${stMean != null ? ` and the ${st} average of ${stMean}${unit}` : ""}.`;

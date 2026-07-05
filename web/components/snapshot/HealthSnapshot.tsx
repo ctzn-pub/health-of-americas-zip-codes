@@ -1,6 +1,6 @@
 "use client";
 import { useResize } from "@/components/charts/chartUtils";
-import { valueFmt, ordinal, gapFmt } from "@/lib/format";
+import { valueFmt, ordinal, gapFmt, marginFmt } from "@/lib/format";
 import { ARCHETYPES, groupByDomain } from "@/lib/snapshot";
 import type { MetricDistribution, MetricDistributions, MetricMeta, ProfileZip } from "@/lib/types";
 import StripPlot from "./StripPlot";
@@ -71,12 +71,14 @@ function ContextSummary({ profile }: { profile: ProfileZip }) {
 export default function HealthSnapshot({
   profile,
   metrics,
+  politicalMetrics = [],
   dists,
   stateMeans,
   onPickMetric,
 }: {
   profile: ProfileZip;
   metrics: MetricMeta[];
+  politicalMetrics?: MetricMeta[];
   dists: MetricDistributions;
   stateMeans: Record<string, number> | undefined;
   onPickMetric: (metricId: string) => void;
@@ -85,6 +87,18 @@ export default function HealthSnapshot({
   const groups = groupByDomain(metrics);
   // profile.m is positional in catalog order; map metric_id -> [value, pct] | null
   const byId = new Map(metrics.map((mm, i) => [mm.metric_id, profile.m[i] ?? null]));
+
+  // presidential-vote rows from the shard politics tuple [m16, m20, swing, pct20, pctSwing]
+  const p = profile.p;
+  const politicalRows = p
+    ? politicalMetrics
+        .map((m) => {
+          const value = m.metric_id === "pres_margin_2020" ? p[1] : m.metric_id === "pres_swing" ? p[2] : null;
+          const natPct = m.metric_id === "pres_margin_2020" ? p[3] : m.metric_id === "pres_swing" ? p[4] : null;
+          return { m, value: value ?? null, natPct: natPct ?? null };
+        })
+        .filter((r) => r.value != null)
+    : [];
 
   return (
     <div className="snap-strips-block">
@@ -137,12 +151,50 @@ export default function HealthSnapshot({
             })}
           </section>
         ))}
+
+        {politicalRows.length > 0 && (
+          <section className="snap-group" key="politics">
+            <h3 className="snap-group-title">Presidential vote</h3>
+            <p className="strip-group-hint" aria-hidden="true">← more Republican · more Democratic →</p>
+            {politicalRows.map(({ m, value, natPct }) => {
+              const dist = dists[m.metric_id];
+              const stateMean = state ? stateMeans?.[m.metric_id] ?? null : null;
+              const delta = value != null && stateMean != null ? value - stateMean : null;
+              return (
+                <div className="strip-row" key={m.metric_id}>
+                  <button
+                    type="button"
+                    className="strip-label"
+                    onClick={() => onPickMetric(m.metric_id)}
+                    title={`Map ${m.label} across the U.S.`}
+                  >
+                    <span className="strip-name">{m.short_label || m.label}</span>
+                    {delta != null && (
+                      <span className="strip-delta pct-mid">
+                        {delta > 0 ? "D" : "R"}+{Math.abs(delta).toFixed(1)} vs {state}
+                      </span>
+                    )}
+                  </button>
+                  <StripCell meta={m} dist={dist} value={value} stateMean={stateMean} stateAbbr={state} />
+                  <div className="strip-read">
+                    <span className="strip-val">{marginFmt(value)}</span>
+                    <span className="strip-pct pct-mid">
+                      {natPct != null ? `${ordinal(natPct)} pct` : ""}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </section>
+        )}
       </div>
 
       <p className="snap-foot muted">
         Each strip shows the national distribution of ZIP/ZCTA areas, with markers for this ZIP, the
-        U.S. average{state ? `, and the ${state} average` : ""}. Percentiles are national; every measure is framed so
-        lower is better. Click a measure name to map it across the country.
+        U.S. average{state ? `, and the ${state} average` : ""}. Percentiles are national; every health measure is framed so
+        lower is better. The presidential-vote strips are directional, not better/worse — left is more
+        Republican, right more Democratic; their percentiles rank Democratic lean. Click a measure name
+        to map it across the country.
       </p>
     </div>
   );

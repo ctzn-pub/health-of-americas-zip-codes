@@ -204,6 +204,206 @@ export function PoliticsLeanLines({ data, ids }: { data: PoliticsPayload; ids: s
   );
 }
 
+/** Civic participation vs health burden: votes per resident by burden decile, each
+ *  bar tinted by that decile's 2020 margin, with the swing plotted as a gold needle. */
+export function TurnoutGradient({ data }: { data: PoliticsPayload }) {
+  const [ref, width] = useResize();
+  const H = 330;
+  const m = { t: 20, r: 56, b: 44, l: 52 };
+  const deciles = data.turnout.deciles;
+
+  const iw = Math.max(0, width - m.l - m.r);
+  const ih = H - m.t - m.b;
+  const x = d3.scaleBand<number>().domain(deciles.map((d) => d.decile)).range([0, iw]).paddingInner(0.22);
+  const yMax = Math.max(...deciles.map((d) => d.votes_per_resident)) * 1.12;
+  const y = d3.scaleLinear().domain([0, yMax]).range([ih, 0]);
+  const swingExt = Math.max(4, ...deciles.map((d) => Math.abs(d.swing ?? 0))) * 1.25;
+  const ySwing = d3.scaleLinear().domain([-swingExt, swingExt]).range([ih, 0]);
+  const marginColor = (v: number) => (v > 0 ? BLUE : RED);
+
+  const cols: Col[] = [
+    { key: "decile", label: "Burden decile", numeric: true },
+    { key: "votes_per_resident", label: "Votes / resident", numeric: true, fmt: (v) => v.toFixed(2) },
+    { key: "margin", label: "2020 margin", numeric: true, fmt: (v) => (v > 0 ? `D+${v.toFixed(1)}` : `R+${Math.abs(v).toFixed(1)}`) },
+    { key: "swing", label: "Swing", numeric: true, fmt: (v) => (v == null ? "—" : `${v > 0 ? "+" : ""}${v.toFixed(1)}`) },
+  ];
+
+  return (
+    <div ref={ref} style={{ width: "100%" }}>
+      {width > 0 && (
+        <svg
+          width={width}
+          height={H}
+          role="img"
+          aria-label="Two-party votes per resident by decile of combined health burden; participation falls as burden rises while the 2016 to 2020 swing runs toward Republicans."
+          style={{ fontVariantNumeric: "tabular-nums", display: "block" }}
+        >
+          <g aria-hidden="true">
+            {y.ticks(4).map((t) => (
+              <line key={t} x1={m.l} x2={m.l + iw} y1={m.t + y(t)} y2={m.t + y(t)} stroke={GRID} shapeRendering="crispEdges" />
+            ))}
+          </g>
+          {deciles.map((d) => {
+            const bx = m.l + (x(d.decile) ?? 0);
+            const by = m.t + y(d.votes_per_resident);
+            return (
+              <g key={d.decile}>
+                <rect x={bx} y={by} width={x.bandwidth()} height={ih - y(d.votes_per_resident)} rx={2.5}
+                  fill={marginColor(d.margin)} fillOpacity={0.82}>
+                  <title>{`Decile ${d.decile}: ${d.votes_per_resident.toFixed(2)} votes/resident · 2020 ${d.margin > 0 ? "D" : "R"}+${Math.abs(d.margin).toFixed(1)} · swing ${d.swing != null ? (d.swing > 0 ? "D" : "R") + "+" + Math.abs(d.swing).toFixed(1) : "—"}`}</title>
+                </rect>
+                <text x={bx + x.bandwidth() / 2} y={by - 5} fontSize={10} textAnchor="middle" fill="var(--ink-2)">
+                  {d.votes_per_resident.toFixed(2)}
+                </text>
+              </g>
+            );
+          })}
+          {/* gold swing needle on its own right-hand scale */}
+          <path
+            aria-hidden="true"
+            d={
+              d3
+                .line<(typeof deciles)[number]>()
+                .defined((d) => d.swing != null)
+                .x((d) => m.l + (x(d.decile) ?? 0) + x.bandwidth() / 2)
+                .y((d) => m.t + ySwing(d.swing ?? 0))(deciles) ?? undefined
+            }
+            fill="none"
+            stroke={GOLD}
+            strokeWidth={2}
+          />
+          {deciles.map((d) =>
+            d.swing != null ? (
+              <circle key={`s${d.decile}`} cx={m.l + (x(d.decile) ?? 0) + x.bandwidth() / 2} cy={m.t + ySwing(d.swing)} r={3} fill={GOLD} stroke="#0c1420" strokeWidth={1} aria-hidden="true" />
+            ) : null,
+          )}
+          <line aria-hidden="true" x1={m.l} x2={m.l + iw} y1={m.t + ySwing(0)} y2={m.t + ySwing(0)} stroke={GOLD} strokeOpacity={0.3} strokeDasharray="3 4" />
+          <Axis orient="left" scale={y} tx={m.l} ty={m.t} ticks={4} tickFormat={(d) => `${d}`} />
+          <g aria-hidden="true" fontSize={10} fill={BENCH}>
+            <text x={m.l - 38} y={m.t - 8}>votes / resident</text>
+            <text x={m.l + iw + 6} y={m.t + ySwing(0) + 3} fill={GOLD}>swing 0</text>
+            {deciles.map((d) => (
+              <text key={d.decile} x={m.l + (x(d.decile) ?? 0) + x.bandwidth() / 2} y={m.t + ih + 16} textAnchor="middle">
+                {d.decile}
+              </text>
+            ))}
+            <text x={m.l} y={m.t + ih + 34}>← least health burden</text>
+            <text x={m.l + iw} y={m.t + ih + 34} textAnchor="end">most health burden →</text>
+          </g>
+        </svg>
+      )}
+      <p className="muted" aria-hidden="true" style={{ fontSize: 11.5, margin: "6px 0 0" }}>
+        Bars: two-party votes per resident, tinted by the decile&apos;s 2020 margin
+        (<span style={{ color: RED }}>R</span>/<span style={{ color: BLUE }}>D</span>) ·{" "}
+        <span style={{ color: GOLD }}>—◆—</span> 2016→2020 swing (right scale, gold zero line)
+      </p>
+      <TableFallback
+        caption="Votes per resident, 2020 margin, and swing by decile of combined health burden"
+        columns={cols}
+        rows={deciles as unknown as Record<string, any>[]}
+      />
+    </div>
+  );
+}
+
+/** Who swung: LOESS of the 2016→2020 swing over each context variable's percentile —
+ *  six comparable small multiples on one x axis. */
+export function SwingFacets({ data }: { data: PoliticsPayload }) {
+  const [ref, width] = useResize();
+  const facets = data.swing_facets.facets;
+  const cols = width >= 640 ? 3 : 2;
+  const gap = 14;
+  const fw = width > 0 ? (width - gap * (cols - 1)) / cols : 0;
+  const FH = 150;
+  const m = { t: 22, r: 8, b: 20, l: 30 };
+
+  const yExt = Math.max(4, ...facets.flatMap((f) => f.loess.map((d) => Math.abs(d[1])))) * 1.2;
+
+  const tblCols: Col[] = [
+    { key: "label", label: "Context" },
+    { key: "rho", label: "ρ vs swing", numeric: true, fmt: (v) => (v == null ? "—" : v.toFixed(2)) },
+  ];
+
+  return (
+    <div ref={ref} style={{ width: "100%" }}>
+      {width > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap }}>
+          {facets.map((f) => {
+            const iw = fw - m.l - m.r;
+            const ih = FH - m.t - m.b;
+            const x = d3.scaleLinear().domain([0, 100]).range([0, iw]);
+            const y = d3.scaleLinear().domain([-yExt, yExt]).range([ih, 0]);
+            const pos = (f.rho ?? 0) >= 0;
+            return (
+              <svg
+                key={f.key}
+                width={fw}
+                height={FH}
+                role="img"
+                aria-label={`${f.label}: LOESS of the 2016 to 2020 swing across its percentile; Spearman rho ${f.rho ?? "n/a"}.`}
+                style={{ fontVariantNumeric: "tabular-nums", display: "block" }}
+              >
+                <text x={m.l} y={12} fontSize={11} fontWeight={600} fill="var(--ink)">{f.label}</text>
+                <text x={fw - m.r} y={12} fontSize={10} textAnchor="end" fill={pos ? BLUE : RED} fontFamily="var(--mono)">
+                  ρ {f.rho == null ? "—" : f.rho.toFixed(2)}
+                </text>
+                <line aria-hidden="true" x1={m.l} x2={m.l + iw} y1={m.t + y(0)} y2={m.t + y(0)} stroke={BENCH} strokeOpacity={0.5} shapeRendering="crispEdges" />
+                {/* fill between the curve and zero: blue above (toward D), red below */}
+                <path
+                  aria-hidden="true"
+                  d={
+                    d3
+                      .area<[number, number]>()
+                      .x((d) => m.l + x(d[0]))
+                      .y0(m.t + y(0))
+                      .y1((d) => m.t + y(d[1]))(f.loess as [number, number][]) ?? undefined
+                  }
+                  fill="url(#swing-split)"
+                  opacity={0.35}
+                />
+                <path
+                  aria-hidden="true"
+                  d={
+                    d3
+                      .line<[number, number]>()
+                      .x((d) => m.l + x(d[0]))
+                      .y((d) => m.t + y(d[1]))(f.loess as [number, number][]) ?? undefined
+                  }
+                  fill="none"
+                  stroke={INK}
+                  strokeWidth={1.8}
+                />
+                <g aria-hidden="true" fontSize={9} fill={BENCH} fontFamily="var(--mono)">
+                  <text x={m.l} y={FH - 6}>low</text>
+                  <text x={m.l + iw} y={FH - 6} textAnchor="end">high</text>
+                  <text x={m.l - 4} y={m.t + y(0) + 3} textAnchor="end">0</text>
+                  <text x={m.l - 4} y={m.t + 8} textAnchor="end">+{Math.round(yExt)}</text>
+                  <text x={m.l - 4} y={m.t + ih} textAnchor="end">−{Math.round(yExt)}</text>
+                </g>
+              </svg>
+            );
+          })}
+          <svg width={0} height={0} aria-hidden="true" style={{ position: "absolute" }}>
+            <defs>
+              <linearGradient id="swing-split" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={BLUE} />
+                <stop offset="50%" stopColor={BLUE} stopOpacity={0.5} />
+                <stop offset="50%" stopColor={RED} stopOpacity={0.5} />
+                <stop offset="100%" stopColor={RED} />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+      )}
+      <TableFallback
+        caption="Spearman correlation of the 2016-2020 swing with each context variable"
+        columns={tblCols}
+        rows={facets as unknown as Record<string, any>[]}
+      />
+    </div>
+  );
+}
+
 /** The realignment curve: 2016 margin (x) vs 2016→2020 swing (y), sampled ZIP codes
  *  plus the LOESS trend. */
 export function PoliticsSwingScatter({ data }: { data: PoliticsPayload }) {

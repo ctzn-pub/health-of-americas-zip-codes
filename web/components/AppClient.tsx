@@ -123,6 +123,10 @@ export default function AppClient({ storiesIndex }: { storiesIndex?: ReactNode }
     () => (catalog ? catalog.metrics.filter((m) => m.kind !== "political") : []),
     [catalog],
   );
+  const politicalMetrics = useMemo(
+    () => (catalog ? catalog.metrics.filter((m) => m.kind === "political") : []),
+    [catalog],
+  );
   const isPolitical = meta?.kind === "political";
 
   // return to the top when toggling views or opening/closing a story
@@ -373,6 +377,7 @@ export default function AppClient({ storiesIndex }: { storiesIndex?: ReactNode }
           <HealthSnapshot
             profile={profile}
             metrics={healthMetrics}
+            politicalMetrics={politicalMetrics}
             dists={dists}
             stateMeans={stateMeans}
             onPickMetric={(id) => setState({ view: "measure", metric: id })}

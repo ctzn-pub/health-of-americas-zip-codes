@@ -10,7 +10,7 @@ interface Props {
   county?: string | null;
   adi?: number | null;
   income?: number | null;
-  politics?: [number | null, number | null, number | null]; // [margin_2016, margin_2020, swing] pct pts
+  politics?: (number | null)[]; // [margin_2016, margin_2020, swing, ...] pct pts
   source?: string;
   backfilled?: number;
   meta: MetricMeta;

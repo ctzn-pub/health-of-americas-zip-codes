@@ -639,6 +639,107 @@ def main() -> None:
             """
         ).fetchdf())
 
+    # ---- civic participation vs health burden ----
+    # Votes per resident (fractional two-party total / ACS population) is a crude
+    # turnout proxy — the denominator includes children — but it is comparable across
+    # ZCTAs. Burden score = mean z across observed measures (>= 18 of 26, mirroring
+    # the app's archetype-assignment rule).
+    z_terms = []
+    for mid in health_ids:
+        mu, sd = con.execute(f"SELECT avg({mid}), stddev_samp({mid}) FROM j").fetchone()
+        if sd and sd > 0:
+            z_terms.append(f"(({mid}) - {mu}) / {sd}")
+    z_expr = f"({' + '.join(f'COALESCE({t}, 0)' for t in z_terms)}) / NULLIF({' + '.join(f'(CASE WHEN {t} IS NOT NULL THEN 1 ELSE 0 END)' for t in z_terms)}, 0)"
+    n_obs_expr = " + ".join(f"(CASE WHEN {mid} IS NOT NULL THEN 1 ELSE 0 END)" for mid in health_ids)
+    turnout_rows = records(con.execute(
+        f"""
+        WITH b AS (
+          SELECT {z_expr} AS burden,
+                 pres_tot_2020 / population AS vpr,
+                 pres_margin_2020 AS margin, pres_swing AS swing, population AS pop
+          FROM j
+          WHERE ({n_obs_expr}) >= 18
+            AND population >= 200 AND pres_tot_2020 >= {MIN_VOTES}
+            AND pres_margin_2020 IS NOT NULL
+        ),
+        d AS (
+          SELECT *, ntile(10) OVER (ORDER BY burden) AS decile FROM b
+        )
+        SELECT decile,
+               count(*) n, sum(pop) pop,
+               sum(vpr * pop) / sum(pop) vpr,
+               sum(margin * pop) / sum(pop) margin,
+               sum(swing * pop) / sum(pop) FILTER (WHERE swing IS NOT NULL) swing
+        FROM d GROUP BY decile ORDER BY decile
+        """
+    ).fetchdf())
+    rho_turnout, n_turnout = con.execute(
+        f"""
+        SELECT corr(rx, ry), count(*) FROM (
+          SELECT rank() OVER (ORDER BY {z_expr}) rx,
+                 rank() OVER (ORDER BY pres_tot_2020 / population) ry
+          FROM j
+          WHERE ({n_obs_expr}) >= 18 AND population >= 200 AND pres_tot_2020 >= {MIN_VOTES})
+        """
+    ).fetchone()
+    turnout = {
+        "method": (
+            "Fractional two-party 2020 votes per resident (ACS population incl. children — a "
+            "participation proxy, not certified turnout) by decile of a composite burden score "
+            "(mean z across observed measures, >= 18 of 26). Population-weighted means."
+        ),
+        "rho": round(float(rho_turnout), 3) if rho_turnout is not None else None,
+        "n": int(n_turnout),
+        "deciles": [
+            {
+                "decile": int(r["decile"]),
+                "n": int(r["n"]),
+                "population": int(r["pop"]),
+                "votes_per_resident": round(float(r["vpr"]), 4),
+                "margin": round(float(r["margin"]), 1),
+                "swing": round(float(r["swing"]), 2) if r["swing"] is not None else None,
+            }
+            for r in turnout_rows
+        ],
+    }
+
+    # ---- who swung: swing vs demographic percentiles (comparable small multiples) ----
+    SWING_FACETS = [
+        ("college", "college_pct", "College graduates"),
+        ("income", "median_income_clean", "Median household income"),
+        ("hispanic", "hispanic_pct", "Hispanic population share"),
+        ("black", "black_pct", "Black population share"),
+        ("density", "population_density", "Population density"),
+        ("age65", "age65_pct", "Adults 65+"),
+    ]
+    facets = []
+    for key, col, label in SWING_FACETS:
+        fdf = con.execute(
+            f"""
+            SELECT 100.0 * (rank() OVER (ORDER BY {col}) - 1)
+                     / NULLIF(count(*) OVER () - 1, 0) AS x,
+                   pres_swing AS y
+            FROM j WHERE {col} IS NOT NULL AND pres_swing IS NOT NULL
+            """
+        ).fetchdf()
+        fx = fdf["x"].to_numpy(float)
+        fy = fdf["y"].to_numpy(float)
+        grid = np.linspace(1, 99, 33)
+        rho_f = con.execute(
+            f"""
+            SELECT corr(rx, ry) FROM (
+              SELECT rank() OVER (ORDER BY {col}) rx, rank() OVER (ORDER BY pres_swing) ry
+              FROM j WHERE {col} IS NOT NULL AND pres_swing IS NOT NULL)
+            """
+        ).fetchone()[0]
+        facets.append({
+            "key": key,
+            "label": label,
+            "rho": round(float(rho_f), 3) if rho_f is not None else None,
+            "n": int(len(fdf)),
+            "loess": loess(fx, fy, grid),
+        })
+
     counts = records(con.execute(
         """
         SELECT count(*) FILTER (WHERE pres_swing < 0) shift_r,
@@ -681,6 +782,14 @@ def main() -> None:
                         "x": "pres_margin_2016", "y": "pres_swing"},
         "shift_right": shift_list("ASC"),
         "shift_left": shift_list("DESC"),
+        "turnout": turnout,
+        "swing_facets": {
+            "method": (
+                "LOESS of the 2016->2020 swing over each context variable's within-sample "
+                "percentile (0-100), so all facets share one x axis; rho is Spearman."
+            ),
+            "facets": facets,
+        },
         "generated_at": generated_at,
     })
 

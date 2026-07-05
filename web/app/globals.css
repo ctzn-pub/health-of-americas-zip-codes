@@ -747,3 +747,6 @@ a.story-card:hover .sc-go { letter-spacing: 0.13em; }
   display: inline-flex; align-items: center; gap: 8px;
 }
 .btn-ghost:hover { background: rgba(151, 180, 216, 0.08); text-decoration: none; }
+
+/* presidential-vote strip group hint */
+.strip-group-hint { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.05em; color: var(--muted); margin: 0 0 4px; }
