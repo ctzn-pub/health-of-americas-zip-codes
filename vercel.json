@@ -7,9 +7,14 @@
   "trailingSlash": true,
   "redirects": [
     { "source": "/atlas", "destination": "/?p=atlas", "permanent": true },
+    { "source": "/atlas/", "destination": "/?p=atlas", "permanent": true },
     { "source": "/methods", "destination": "/?p=methods", "permanent": true },
+    { "source": "/methods/", "destination": "/?p=methods", "permanent": true },
     { "source": "/sources", "destination": "/?p=sources", "permanent": true },
+    { "source": "/sources/", "destination": "/?p=sources", "permanent": true },
     { "source": "/stories", "destination": "/?p=stories", "permanent": true },
-    { "source": "/stories/:slug", "destination": "/?p=story&s=:slug", "permanent": true }
+    { "source": "/stories/", "destination": "/?p=stories", "permanent": true },
+    { "source": "/stories/:slug", "destination": "/?p=story&s=:slug", "permanent": true },
+    { "source": "/stories/:slug/", "destination": "/?p=story&s=:slug", "permanent": true }
   ]
 }
