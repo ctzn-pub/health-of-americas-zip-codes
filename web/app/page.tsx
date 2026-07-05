@@ -33,6 +33,7 @@ export default function Page() {
       <div className="acc-stack">
         <AccordionSection
           id="methods"
+          index="Appendix A"
           title="Methods & limitations"
           sub="Modeled estimates, ZIP vs ZCTA, view modes, the political layers, missingness"
         >
@@ -40,6 +41,7 @@ export default function Page() {
         </AccordionSection>
         <AccordionSection
           id="sources"
+          index="Appendix B"
           title="Sources & provenance"
           sub="Underlying files, vintages, and per-measure provenance"
         >

@@ -1,8 +1,23 @@
 import type { Metadata, Viewport } from "next";
+import { Archivo, Fraunces, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import SiteHeader from "@/components/chrome/SiteHeader";
 import SiteFooter from "@/components/chrome/SiteFooter";
 import { SITE, SITE_URL } from "@/lib/site";
+
+// Type system: Fraunces (editorial display serif with optical sizing) · Archivo
+// (grotesk UI voice) · IBM Plex Mono (every number, label, kicker — the instrument voice).
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  axes: ["opsz", "SOFT", "WONK"],
+});
+const archivo = Archivo({ subsets: ["latin"], variable: "--font-sans" });
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -49,7 +64,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${fraunces.variable} ${archivo.variable} ${plexMono.variable}`}>
       <body>
         <a href="#main" className="skip-link">
           Skip to content

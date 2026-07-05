@@ -6,11 +6,13 @@ import { useEffect, useRef, useState } from "react";
  *  when its own #hash is targeted (header/footer links) or on click. */
 export default function AccordionSection({
   id,
+  index,
   title,
   sub,
   children,
 }: {
   id: string;
+  index?: string;
   title: string;
   sub?: string;
   children: React.ReactNode;
@@ -34,6 +36,7 @@ export default function AccordionSection({
     <section id={id} ref={ref} className="section-acc" aria-label={title}>
       <details open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
         <summary>
+          {index && <span className="acc-index">{index}</span>}
           <span className="acc-title">{title}</span>
           {sub && <span className="acc-sub">{sub}</span>}
           <span className="acc-chevron" aria-hidden="true">›</span>
