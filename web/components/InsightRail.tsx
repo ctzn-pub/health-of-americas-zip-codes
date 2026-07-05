@@ -5,6 +5,7 @@ interface Props {
   insights: Insight[];
   onSelect?: (zip: string | null) => void;
   metricLabel: string;
+  political?: boolean;
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -14,8 +15,15 @@ const TYPE_LABEL: Record<string, string> = {
   extreme: "Highest burden",
   affected: "People affected",
 };
+const POLITICAL_TYPE_LABEL: Record<string, string> = {
+  ...TYPE_LABEL,
+  benchmark: "National margin",
+  extreme: "Extremes",
+  affected: "Landslide areas",
+};
 
-export default function InsightRail({ insights, onSelect, metricLabel }: Props) {
+export default function InsightRail({ insights, onSelect, metricLabel, political }: Props) {
+  const typeLabel = political ? POLITICAL_TYPE_LABEL : TYPE_LABEL;
   return (
     <section className="rail" aria-label={`Key findings for ${metricLabel}`}>
       <div className="rail-head">
@@ -39,7 +47,7 @@ export default function InsightRail({ insights, onSelect, metricLabel }: Props) 
                   }
                 : {})}
             >
-              <div className="chip">{TYPE_LABEL[ins.type] ?? ins.type}</div>
+              <div className="chip">{typeLabel[ins.type] ?? ins.type}</div>
               <div className="claim">{ins.claim}</div>
               <div className="method">{ins.method_note}</div>
             </Cmp>

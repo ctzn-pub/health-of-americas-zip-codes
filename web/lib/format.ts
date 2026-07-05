@@ -3,8 +3,15 @@ import * as d3 from "d3";
 /** Formatter for a metric value given its d3 format spec (e.g. ".1f"), with unit suffix. */
 export function valueFmt(spec: string, unit = "percent") {
   const f = d3.format(spec || ".1f");
-  const suffix = unit === "percent" ? "%" : "";
+  const suffix = unit === "percent" ? "%" : unit === "points" ? " pts" : "";
   return (v: number | null | undefined) => (v == null || Number.isNaN(v) ? "—" : `${f(v)}${suffix}`);
+}
+
+/** Signed political margin, D+/R+ convention (input: Dem-minus-Rep pct points). */
+export function marginFmt(v: number | null | undefined): string {
+  if (v == null || Number.isNaN(v)) return "—";
+  const a = d3.format(".1f")(Math.abs(v));
+  return v > 0 ? `D+${a}` : v < 0 ? `R+${a}` : "Even";
 }
 
 export function gapFmt(spec: string) {

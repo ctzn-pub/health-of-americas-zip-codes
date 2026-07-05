@@ -1,16 +1,17 @@
-import type { Metadata } from "next";
+"use client";
 import { OutcomeMap, StateStrip } from "@/components/stories/OutcomePanels";
 import { MentalHealthScatter } from "@/components/stories/OutcomeScatters";
 import { StoryCaveat, StoryFig, StoryHead, StoryNext } from "@/components/stories/StoryShell";
-import { getMentalHealth } from "@/lib/serverData";
+import { loadMentalHealth } from "@/lib/data";
 import { STORIES } from "@/lib/stories";
+import { usePayload } from "@/lib/useData";
+import StoryLoading from "./StoryLoading";
 
 const story = STORIES.find((s) => s.slug === "diagnosis-gap")!;
 
-export const metadata: Metadata = { title: story.title, description: story.dek };
-
-export default async function DiagnosisGapStory() {
-  const mh = await getMentalHealth();
+export default function DiagnosisGapStory() {
+  const mh = usePayload(loadMentalHealth);
+  if (!mh) return <StoryLoading />;
   const lo = mh.states.slice(0, 3);
   const hi = mh.states.slice(-3).reverse();
 

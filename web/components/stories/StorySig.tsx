@@ -161,6 +161,36 @@ function TobaccoBeltSig() {
   );
 }
 
+function RedBlueSig() {
+  const rnd = mulberry32(73);
+  const n = 13;
+  const bw = (W - 28) / n;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="sc-sig" aria-hidden="true">
+      <line x1={12} y1={H / 2} x2={W - 12} y2={H / 2} stroke="#8593a9" strokeWidth={1} opacity={0.7} />
+      {Array.from({ length: n }, (_, i) => {
+        // diverging margin bars: red left of center, blue right, ragged heights
+        const t = i / (n - 1);
+        const dem = t > 0.5;
+        const mag = Math.abs(t - 0.5) * 2;
+        const h = 4 + mag * 22 + rnd() * 6;
+        return (
+          <rect
+            key={i}
+            x={14 + i * bw}
+            y={dem ? H / 2 - h : H / 2}
+            width={bw - 2}
+            height={h}
+            rx={1.5}
+            fill={dem ? "#6cb6ff" : "#f4675d"}
+            opacity={0.85}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
 const SIGS: Record<string, () => React.ReactElement> = {
   "one-axis": OneAxisSig,
   connected: ConnectedSig,
@@ -169,6 +199,7 @@ const SIGS: Record<string, () => React.ReactElement> = {
   "wealth-gap": WealthGapSig,
   "diagnosis-gap": DiagnosisGapSig,
   "tobacco-belt": TobaccoBeltSig,
+  "red-blue-health": RedBlueSig,
 };
 
 export default function StorySig({ slug }: { slug: string }) {

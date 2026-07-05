@@ -14,10 +14,15 @@ export const SITE = {
     "An interactive atlas of 26 burden-oriented health and social-need measures across 32,409 U.S. ZIP/ZCTA areas, with ACS demographics, ADI context, state comparisons, and modeled CDC PLACES-style estimates.",
 } as const;
 
-export const NAV: { href: string; label: string; cta?: boolean }[] = [
-  { href: "/atlas", label: "Atlas" },
-  { href: "/stories", label: "Stories" },
-  { href: "/methods", label: "Methods" },
-  { href: "/sources", label: "Sources" },
-  { href: "/atlas", label: "Open the atlas", cta: true },
+// SPA navigation: every section lives on "/" and is addressed by the `p` query param.
+export type PageId = "home" | "atlas" | "stories" | "story" | "methods" | "sources";
+
+export const pagePath = (p: PageId) => (p === "home" ? "/" : `/?p=${p}`);
+
+export const NAV: { href: string; page: PageId; label: string; cta?: boolean }[] = [
+  { href: pagePath("atlas"), page: "atlas", label: "Atlas" },
+  { href: pagePath("stories"), page: "stories", label: "Stories" },
+  { href: pagePath("methods"), page: "methods", label: "Methods" },
+  { href: pagePath("sources"), page: "sources", label: "Sources" },
+  { href: pagePath("atlas"), page: "atlas", label: "Open the atlas", cta: true },
 ];

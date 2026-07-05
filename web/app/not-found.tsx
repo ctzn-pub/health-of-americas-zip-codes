@@ -18,7 +18,7 @@ export default function NotFound() {
         <Link href="/" className="btn-lg btn-primary">
           Back home
         </Link>
-        <Link href="/atlas" className="btn-ghost">
+        <Link href="/?p=atlas" className="btn-ghost">
           Open the atlas
         </Link>
       </div>

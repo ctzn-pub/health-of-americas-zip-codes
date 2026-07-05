@@ -14,11 +14,11 @@ async function settle(page: Page) {
 }
 
 const views = [
-  { name: "diabetes-gap", url: "/atlas?metric=diabetes&mode=gap" },
-  { name: "diabetes-rate", url: "/atlas?metric=diabetes&mode=rate" },
-  { name: "obesity-percentile", url: "/atlas?metric=obesity&mode=percentile" },
-  { name: "selected-90011", url: "/atlas?metric=diabetes&mode=gap&selected=90011" },
-  { name: "invalid-metric", url: "/atlas?metric=bogus_metric" },
+  { name: "diabetes-gap", url: "/?p=atlas&metric=diabetes&mode=gap" },
+  { name: "diabetes-rate", url: "/?p=atlas&metric=diabetes&mode=rate" },
+  { name: "obesity-percentile", url: "/?p=atlas&metric=obesity&mode=percentile" },
+  { name: "selected-90011", url: "/?p=atlas&metric=diabetes&mode=gap&selected=90011" },
+  { name: "invalid-metric", url: "/?p=atlas&metric=bogus_metric" },
 ];
 
 for (const v of views) {
@@ -31,13 +31,13 @@ for (const v of views) {
 
 test("visual: mobile portrait", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/atlas?metric=diabetes&mode=gap");
+  await page.goto("/?p=atlas&metric=diabetes&mode=gap");
   await settle(page);
   await expect(page).toHaveScreenshot("mobile-diabetes.png", { mask: MASK(page), fullPage: true });
 });
 
 test("e2e: metric + mode + selection round-trip via URL", async ({ page }) => {
-  await page.goto("/atlas?metric=diabetes&mode=gap");
+  await page.goto("/?p=atlas&metric=diabetes&mode=gap");
   await settle(page);
 
   // change metric -> URL + legend update
@@ -61,7 +61,7 @@ test("e2e: metric + mode + selection round-trip via URL", async ({ page }) => {
 });
 
 test("a11y: every panel has a table fallback and values without hover", async ({ page }) => {
-  await page.goto("/atlas?metric=diabetes&mode=gap");
+  await page.goto("/?p=atlas&metric=diabetes&mode=gap");
   await settle(page);
   await expect(page.locator(".panel details.table-fallback")).toHaveCount(4);
   // direct value labels are present in the DOM (not hover-only)

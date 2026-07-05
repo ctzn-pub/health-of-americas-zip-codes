@@ -20,12 +20,15 @@ export default function Distribution({ charts, meta, selectedValue }: PanelProps
   const [ref, width] = useResize();
   const reduce = useReducedMotion();
   const fmt = valueFmt(meta.format, meta.unit);
+  const political = meta.kind === "political";
 
   const bins = charts.distribution.bins;
   const benchmark = charts.distribution.benchmark;
   const p90 = charts.distribution.p90;
 
-  const xLabel = `${meta.label} (${meta.unit === "percent" ? "%" : ""} of ${meta.denominator})`;
+  const xLabel = political
+    ? `${meta.label} (pct points, + = more Democratic)`
+    : `${meta.label} (${meta.unit === "percent" ? "%" : ""} of ${meta.denominator})`;
 
   const model = useMemo(() => {
     const iw = Math.max(0, width - CHART_M.l - CHART_M.r);
@@ -39,7 +42,7 @@ export default function Distribution({ charts, meta, selectedValue }: PanelProps
 
     const x = d3.scaleLinear().domain([x0, x1]).range([0, iw]);
     const y = d3.scaleLinear().domain([0, maxCount]).range([ih, 0]).nice();
-    const color = colorScale("rate", meta.domain, meta.benchmark);
+    const color = colorScale("rate", meta.domain, meta.benchmark, meta.scale_kind === "diverging" ? "diverging" : "sequential");
 
     // index of the bin that contains the selected value (for cross-highlight)
     const selIdx =
@@ -88,7 +91,7 @@ export default function Distribution({ charts, meta, selectedValue }: PanelProps
           d3.sum(bins, (b) => b.count),
         )} ZIP codes; most cluster near ${fmt((modal.x0 + modal.x1) / 2)}, with the U.S. average at ${fmt(
           benchmark,
-        )} and high-burden ZIPs at or above ${fmt(p90)}.`
+        )}${political ? "" : ` and high-burden ZIPs at or above ${fmt(p90)}`}.`
       : `Distribution of ${meta.label} across ZIP codes.`;
 
   const bx = model.x ? CHART_M.l + model.x(benchmark) : 0;
@@ -177,8 +180,8 @@ export default function Distribution({ charts, meta, selectedValue }: PanelProps
             </g>
           )}
 
-          {/* p90 high-burden reference line + label */}
-          {model.x && (
+          {/* p90 high-burden reference line + label (not meaningful for political margins) */}
+          {model.x && !political && (
             <g aria-hidden="true">
               <line
                 x1={px}

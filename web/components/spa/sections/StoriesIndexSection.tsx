@@ -1,17 +1,10 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import StorySig from "@/components/stories/StorySig";
-import { getArchetypes, getCorrelations, getGradients, getMentalHealth, getPca, getSmoking, getWealthGap } from "@/lib/serverData";
+import { getArchetypes, getCorrelations, getGradients, getMentalHealth, getPca, getPolitics, getSmoking, getWealthGap } from "@/lib/serverData";
 import { STORIES, storyPath } from "@/lib/stories";
 
-export const metadata: Metadata = {
-  title: "Stories — what 26 measures across 32,409 ZIP codes can teach",
-  description:
-    "Precomputed analyses of the ZIP Health Atlas: the single axis behind most place-based health differences, the correlation structure of 26 measures, four community archetypes, wealth gaps, and the deprivation gradient.",
-};
-
-export default async function StoriesIndex() {
-  const [pca, corr, arch, grad, wealth, mh, smoke] = await Promise.all([
+export default async function StoriesIndexSection() {
+  const [pca, corr, arch, grad, wealth, mh, smoke, politics] = await Promise.all([
     getPca(),
     getCorrelations(),
     getArchetypes(),
@@ -19,6 +12,7 @@ export default async function StoriesIndex() {
     getWealthGap(),
     getMentalHealth(),
     getSmoking(),
+    getPolitics(),
   ]);
   const pc1 = Math.round(pca.explained[0] * 100);
   const topPair = corr.top_pairs[0];
@@ -66,6 +60,12 @@ export default async function StoriesIndex() {
         <span className="unit"> smoking × neighborhood deprivation</span>
       </span>
     ),
+    "red-blue-health": (
+      <span className="sc-stat">
+        ρ {politics.metrics[0]?.rho_margin?.toFixed(2)}
+        <span className="unit"> {politics.metrics[0]?.short.toLowerCase()} × 2020 margin</span>
+      </span>
+    ),
   };
 
   return (
@@ -95,7 +95,7 @@ export default async function StoriesIndex() {
       <p className="muted" style={{ marginTop: 28, fontSize: 13, maxWidth: "72ch" }}>
         All findings are ecological (about places, not people) and based on model-based small-area
         estimates. Methods, caveats, and reproduction steps are documented on the{" "}
-        <Link href="/methods/">methods page</Link>.
+        <Link href="/?p=methods">methods page</Link>.
       </p>
     </main>
   );

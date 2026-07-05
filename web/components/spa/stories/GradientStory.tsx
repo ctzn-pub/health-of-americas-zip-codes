@@ -1,15 +1,16 @@
-import type { Metadata } from "next";
+"use client";
 import GradientSlopes from "@/components/stories/GradientSlopes";
 import { StoryCaveat, StoryFig, StoryHead, StoryNext } from "@/components/stories/StoryShell";
-import { getGradients } from "@/lib/serverData";
+import { loadGradients } from "@/lib/data";
 import { STORIES } from "@/lib/stories";
+import { usePayload } from "@/lib/useData";
+import StoryLoading from "./StoryLoading";
 
 const story = STORIES.find((s) => s.slug === "gradient")!;
 
-export const metadata: Metadata = { title: story.title, description: story.dek };
-
-export default async function GradientStory() {
-  const grad = await getGradients();
+export default function GradientStory() {
+  const grad = usePayload(loadGradients);
+  if (!grad) return <StoryLoading />;
   const byId = new Map(grad.metrics.map((m) => [m.id, m]));
   const teeth = byId.get("teethlost")!;
   const utility = byId.get("utility_threat")!;

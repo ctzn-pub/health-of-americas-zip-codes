@@ -1,16 +1,17 @@
-import type { Metadata } from "next";
+"use client";
 import { StoryCaveat, StoryFig, StoryHead, StoryNext } from "@/components/stories/StoryShell";
 import DotMap from "@/components/stories/DotMap";
 import { PcaBiplot, PcaLoadings, PcaScree } from "@/components/stories/PcaPanels";
-import { getPca } from "@/lib/serverData";
+import { loadPca } from "@/lib/data";
 import { STORIES } from "@/lib/stories";
+import { usePayload } from "@/lib/useData";
+import StoryLoading from "./StoryLoading";
 
 const story = STORIES.find((s) => s.slug === "one-axis")!;
 
-export const metadata: Metadata = { title: story.title, description: story.dek };
-
-export default async function OneAxisStory() {
-  const pca = await getPca();
+export default function OneAxisStory() {
+  const pca = usePayload(loadPca);
+  if (!pca) return <StoryLoading />;
   const pc1 = pca.explained[0];
   const pc2 = pca.explained[1];
   const ctx1 = pca.pc_context[0];

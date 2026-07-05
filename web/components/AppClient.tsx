@@ -35,12 +35,27 @@ function PanelSkeleton() {
   return <div style={{ height: 300, display: "grid", placeItems: "center" }} className="muted">Loading chart…</div>;
 }
 
-const PANELS: { Cmp: any; title: string; sub: string }[] = [
-  { Cmp: DisparityGradient, title: "The deprivation gradient", sub: "Population-weighted average across Area Deprivation Index deciles, with 95% confidence band." },
-  { Cmp: RankedDotPlot, title: "Highest- and lowest-burden ZIP codes", sub: "Each ZIP against the U.S. average. Hover or focus a row to highlight it on the map." },
-  { Cmp: Distribution, title: "How ZIP codes are distributed", sub: "Count of ZIP codes by value, with the U.S. average and high-burden threshold marked." },
-  { Cmp: ScatterLoess, title: "Health vs. area deprivation", sub: "Each point is a ZIP code. The line is a LOESS trend. Association is ecological, not causal." },
-];
+function panelDefs(political: boolean, shortLabel = ""): { Cmp: any; title: string; sub: string }[] {
+  if (political) {
+    const isSwing = /swing/i.test(shortLabel);
+    return [
+      { Cmp: DisparityGradient, title: "The deprivation gradient", sub: "Population-weighted average across Area Deprivation Index deciles, with 95% confidence band. Positive = more Democratic." },
+      {
+        Cmp: RankedDotPlot,
+        title: isSwing ? "Biggest shifts toward each party" : "Most Democratic and most Republican ZIP codes",
+        sub: `Each ZIP against the national ${isSwing ? "swing" : "two-party margin"}. Hover or focus a row to highlight it on the map.`,
+      },
+      { Cmp: Distribution, title: "How ZIP codes are distributed", sub: `Count of ZIP codes by ${isSwing ? "swing" : "margin"}, with the national value marked. Positive = more Democratic.` },
+      { Cmp: ScatterLoess, title: `${shortLabel || "Vote margin"} vs. area deprivation`, sub: "Each point is a ZIP code. The line is a LOESS trend. Association is ecological, not causal." },
+    ];
+  }
+  return [
+    { Cmp: DisparityGradient, title: "The deprivation gradient", sub: "Population-weighted average across Area Deprivation Index deciles, with 95% confidence band." },
+    { Cmp: RankedDotPlot, title: "Highest- and lowest-burden ZIP codes", sub: "Each ZIP against the U.S. average. Hover or focus a row to highlight it on the map." },
+    { Cmp: Distribution, title: "How ZIP codes are distributed", sub: "Count of ZIP codes by value, with the U.S. average and high-burden threshold marked." },
+    { Cmp: ScatterLoess, title: "Health vs. area deprivation", sub: "Each point is a ZIP code. The line is a LOESS trend. Association is ecological, not causal." },
+  ];
+}
 
 export default function AppClient() {
   const [state, setState] = useUrlState();
@@ -77,6 +92,13 @@ export default function AppClient() {
     return catalog.metrics.find((m) => m.metric_id === state.metric) ?? catalog.metrics.find((m) => m.metric_id === catalog.default_metric) ?? catalog.metrics[0];
   }, [catalog, state.metric]);
   const metricInvalid = !!catalog && !catalog.metrics.some((m) => m.metric_id === state.metric);
+  // political layers (presidential margin/swing) live in the catalog for the measure view,
+  // but the snapshot's composite/strips frame is health-only
+  const healthMetrics = useMemo(
+    () => (catalog ? catalog.metrics.filter((m) => m.kind !== "political") : []),
+    [catalog],
+  );
+  const isPolitical = meta?.kind === "political";
 
   // measure payloads (skip in snapshot view)
   useEffect(() => {
@@ -153,8 +175,8 @@ export default function AppClient() {
         <h1>{isSnap ? "A health snapshot for any ZIP code" : "U.S. health outcomes, ZIP code by ZIP code"}</h1>
         <p className="sub">
           {isSnap
-            ? `Pick a ZIP code to see where it lands across ${catalog.metrics.length} health and social-need measures, with ACS demographics, ADI context, and one experimental composite score.`
-            : `${catalog.metrics.length} burden-oriented measures across 32,409 ZIP/ZCTA areas — mapped against the national average, neighborhood deprivation, and local demographic context.`}
+            ? `Pick a ZIP code to see where it lands across ${healthMetrics.length} health and social-need measures, with ACS demographics, ADI context, 2016–2020 presidential lean, and one experimental composite score.`
+            : `${healthMetrics.length} burden-oriented health measures plus presidential vote margin and swing, across 32,409 ZIP/ZCTA areas — mapped against the national average, neighborhood deprivation, and local demographic context.`}
         </p>
       </header>
 
@@ -202,13 +224,22 @@ export default function AppClient() {
               mode={mapMode}
               domain={mapMeta.domain}
               benchmark={mapMeta.benchmark}
+              kind={mapMeta.scale_kind === "diverging" ? "diverging" : "sequential"}
               bounds={bounds}
               selected={selected}
               hovered={hovered}
               onSelect={onSelect}
               onHover={setHovered}
             />
-            <Legend mode={mapMode} domain={mapMeta.domain} benchmark={mapMeta.benchmark} fmt={mapFmt} title={mapMeta.short_label} lowerIsBetter={mapMeta.lower_is_better} />
+            <Legend
+              mode={mapMode}
+              domain={mapMeta.domain}
+              benchmark={mapMeta.benchmark}
+              fmt={mapFmt}
+              title={mapMeta.short_label}
+              lowerIsBetter={mapMeta.lower_is_better}
+              kind={mapMeta.scale_kind === "diverging" ? "diverging" : "sequential"}
+            />
             {hovered && overMap && (
               <div className="tooltip" style={{ left: Math.min(pointer.x + 14, 9999), top: pointer.y + 14 }}>
                 <div className="tt-name">{placeOf(hoverRec) || `ZIP ${hovered}`}</div>
@@ -233,7 +264,7 @@ export default function AppClient() {
               <SnapshotScoreCard
                 zip={selected}
                 profile={profile}
-                metrics={catalog.metrics}
+                metrics={healthMetrics}
                 nMeasured={profile.m.filter(Boolean).length}
                 onClear={() => onSelect(null)}
                 onPickMetric={(id) => setState({ view: "measure", metric: id })}
@@ -243,7 +274,7 @@ export default function AppClient() {
                 <h2>See any ZIP&apos;s health snapshot</h2>
                 <p className="muted">
                   Search a ZIP code above, or click any area on the map, to see how it compares across
-                  all {catalog.metrics.length} measures, ACS context, state averages, and the nation.
+                  all {healthMetrics.length} measures, ACS context, state averages, and the nation.
                 </p>
                 {selected && !profile && <p className="muted">Loading ZIP {selected}…</p>}
               </div>
@@ -269,7 +300,7 @@ export default function AppClient() {
                   />
                 </div>
               )}
-              {insights && <InsightRail insights={insights.insights} onSelect={onSelect} metricLabel={meta.label} />}
+              {insights && <InsightRail insights={insights.insights} onSelect={onSelect} metricLabel={meta.label} political={isPolitical} />}
             </>
           )}
         </aside>
@@ -279,7 +310,7 @@ export default function AppClient() {
         <section className="snap-strips-section" aria-label="Per-measure health snapshot">
           <HealthSnapshot
             profile={profile}
-            metrics={catalog.metrics}
+            metrics={healthMetrics}
             dists={dists}
             stateMeans={stateMeans}
             onPickMetric={(id) => setState({ view: "measure", metric: id })}
@@ -290,7 +321,7 @@ export default function AppClient() {
       {!isSnap && (
         <section className="panels" aria-label="Analytical panels">
           {charts &&
-            PANELS.map(({ Cmp, title, sub }) => (
+            panelDefs(!!isPolitical, meta.short_label).map(({ Cmp, title, sub }) => (
               <div className="panel" key={title}>
                 <h3>{title}</h3>
                 <p className="panel-sub">{sub}</p>
@@ -304,8 +335,10 @@ export default function AppClient() {
         <p>
           <strong>Sources.</strong> Health outcomes: CDC PLACES-style model-based small-area estimates,
           prepared from <code>zcta_atlas.parquet</code> and joined to public PMTiles geometry. Socioeconomic
-          context includes ACS demographics and ADI 2023 v4.0.1. The composite health score is an
-          experimental average of national percentiles across available measures.
+          context includes ACS demographics and ADI 2023 v4.0.1. Presidential margins and swing come from
+          precinct returns disaggregated to ZCTAs (Fekrazad 2025, <code>zcta_swing_atlas.parquet</code>).
+          The composite health score is an experimental average of national percentiles across available
+          health measures; political layers are excluded from it.
         </p>
         <p>
           <strong>Caveats.</strong> Estimates are modeled, not direct counts. Pennsylvania and Kentucky

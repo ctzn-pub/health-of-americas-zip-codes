@@ -13,10 +13,12 @@ import type {
   MetricCatalog,
   MetricDistributions,
   PcaPayload,
+  PoliticsPayload,
   SmokingPayload,
   ProfileShard,
   RegionCatalog,
   StateSummary,
+  WealthGapPayload,
 } from "./types";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -57,3 +59,5 @@ export const loadGradients = () => get<GradientsPayload>("analytics/gradients.js
 export const loadDotmap = () => get<DotmapPayload>("analytics/dotmap.json");
 export const loadMentalHealth = () => get<MentalHealthPayload>("analytics/mental_health.json");
 export const loadSmoking = () => get<SmokingPayload>("analytics/smoking.json");
+export const loadWealthGap = () => get<WealthGapPayload>("analytics/wealth_gap.json");
+export const loadPolitics = () => get<PoliticsPayload>("analytics/politics.json");

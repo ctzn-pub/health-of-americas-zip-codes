@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { fmtPop, ordinal, valueFmt } from "@/lib/format";
+import { fmtPop, marginFmt, ordinal, valueFmt } from "@/lib/format";
 import { ARCHETYPES, readScore, standouts } from "@/lib/snapshot";
 import { ARCH_COLORS } from "@/components/stories/storyShared";
 import type { MetricMeta, ProfileZip } from "@/lib/types";
@@ -82,6 +82,18 @@ export default function SnapshotScoreCard({
         {backfilled > 0 && <span>{backfilled} backfilled</span>}
         {!hasGeometry && <span>Not in map tiles</span>}
       </div>
+      {profile.p && (profile.p[1] != null || profile.p[0] != null) && (
+        <div className="quality-strip" aria-label="Presidential lean (two-party margin)">
+          {profile.p[1] != null && <span>2020: {marginFmt(profile.p[1])}</span>}
+          {profile.p[0] != null && <span>2016: {marginFmt(profile.p[0])}</span>}
+          {profile.p[2] != null && (
+            <span>
+              swing {profile.p[2] > 0 ? "D" : profile.p[2] < 0 ? "R" : ""}
+              {profile.p[2] === 0 ? "±0.0" : `+${Math.abs(profile.p[2]).toFixed(1)}`}
+            </span>
+          )}
+        </div>
+      )}
       {score ? (
         <>
           <ScoreGauge score={score.score} />
@@ -101,7 +113,7 @@ export default function SnapshotScoreCard({
         <p className="arch-chip-row">
           <Link
             className="arch-chip"
-            href="/stories/four-americas/"
+            href="/?p=story&s=four-americas"
             title="One of four community archetypes from clustering all 26 measures — read the story"
           >
             <span className="arch-dot" style={{ background: ARCH_COLORS[profile.a[0]] }} aria-hidden="true" />

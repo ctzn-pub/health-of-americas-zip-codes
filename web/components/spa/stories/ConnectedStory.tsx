@@ -1,15 +1,16 @@
-import type { Metadata } from "next";
+"use client";
 import CorrelationMatrix, { ContextHeatmap } from "@/components/stories/CorrelationMatrix";
 import { StoryCaveat, StoryFig, StoryHead, StoryNext } from "@/components/stories/StoryShell";
-import { getCorrelations } from "@/lib/serverData";
+import { loadCorrelations } from "@/lib/data";
 import { STORIES } from "@/lib/stories";
+import { usePayload } from "@/lib/useData";
+import StoryLoading from "./StoryLoading";
 
 const story = STORIES.find((s) => s.slug === "connected")!;
 
-export const metadata: Metadata = { title: story.title, description: story.dek };
-
-export default async function ConnectedStory() {
-  const corr = await getCorrelations();
+export default function ConnectedStory() {
+  const corr = usePayload(loadCorrelations);
+  if (!corr) return <StoryLoading />;
   const social = corr.top_pairs.filter(
     (p) => p.rho >= 0.94,
   );
@@ -73,7 +74,7 @@ export default async function ConnectedStory() {
               Age 65+ is the great exception: it flips sign depending on whether a condition
               accumulates with age (cancer, heart disease) or concentrates among the young (loneliness,
               skipped checkups, housing insecurity). That split is exactly the second principal axis in{" "}
-              <a href="/stories/one-axis/">the one-axis story</a>.
+              <a href="/?p=story&s=one-axis">the one-axis story</a>.
             </>
           }
         >

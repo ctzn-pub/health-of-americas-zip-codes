@@ -64,7 +64,7 @@ export function StoryCaveat() {
       fit on the ~23,800 ZIP/ZCTA areas with complete data on all 26 measures (coverage is limited
       mainly by the newer social-needs measures); maps and community-type assignments extend to
       areas observing at least 18 of the 26. Full details on the{" "}
-      <Link href="/methods/">methods page</Link>.
+      <Link href="/?p=methods">methods page</Link>.
     </div>
   );
 }

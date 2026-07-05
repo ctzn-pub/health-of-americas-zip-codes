@@ -1,6 +1,6 @@
 "use client";
 import type { MetricMeta } from "@/lib/types";
-import { valueFmt, gapFmt, fmtPop, ordinal } from "@/lib/format";
+import { valueFmt, gapFmt, fmtPop, ordinal, marginFmt } from "@/lib/format";
 
 interface Props {
   zip: string;
@@ -43,7 +43,8 @@ export default function ZipCard({
   percentile,
   onClear,
 }: Props) {
-  const fmt = valueFmt(meta.format, meta.unit);
+  const political = meta.kind === "political";
+  const fmt = political ? marginFmt : valueFmt(meta.format, meta.unit);
   const gfmt = gapFmt(meta.format);
   const gap = value != null ? value - meta.benchmark : undefined;
   const worse = gap != null && (meta.lower_is_better ? gap > 0 : gap < 0);
@@ -72,8 +73,9 @@ export default function ZipCard({
         <div className="zip-grid">
           <span className="lbl">{meta.label}</span>
           <span className="val">{fmt(value)}</span>
-          <span className="lbl">vs U.S. average ({fmt(meta.benchmark)})</span>
-          <span className="val" style={{ color: worse ? "var(--accent)" : "var(--good)" }}>
+          <span className="lbl">{political ? `vs national margin (${fmt(meta.benchmark)})` : `vs U.S. average (${fmt(meta.benchmark)})`}</span>
+          {/* political gaps carry no better/worse valence — keep them ink-neutral */}
+          <span className="val" style={{ color: political ? undefined : worse ? "var(--accent)" : "var(--good)" }}>
             {gfmt(gap)}
           </span>
           {percentile != null && (

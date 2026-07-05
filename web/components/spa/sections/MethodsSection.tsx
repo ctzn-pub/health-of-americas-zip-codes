@@ -1,17 +1,9 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { getCoverageReport, getMetricCatalog } from "@/lib/serverData";
 
-export const metadata: Metadata = {
-  title: "Methods & limitations",
-  description:
-    "How the ZIP-code health atlas is built: model-based CDC PLACES-style estimates, the ZIP-vs-ZCTA distinction, the national benchmark and view modes, the deprivation gradient, missingness, color and accessibility choices, and what the data is not.",
-  alternates: { canonical: "/methods" },
-};
-
 const nf = new Intl.NumberFormat("en-US");
 
-export default async function MethodsPage() {
+export default async function MethodsSection() {
   const [catalog, coverage] = await Promise.all([getMetricCatalog(), getCoverageReport()]);
   const totalJoined = coverage.rows?.n_rows ?? Math.max(...catalog.metrics.map((m) => m.n_zip + m.missing_count));
   const mappable = coverage.rows?.n_with_geometry ?? totalJoined;
@@ -118,6 +110,29 @@ export default async function MethodsPage() {
             fallacy) and a correlation — Spearman ρ here — is not evidence of cause.
           </div>
 
+          <h2>The political layers</h2>
+          <p>
+            The atlas carries two political measures alongside the health measures:{" "}
+            <strong>2020 presidential margin</strong> and <strong>2016→2020 presidential swing</strong>,
+            both two-party (Democratic minus Republican) in percentage points, positive = more
+            Democratic. They come from precinct-level general-election returns statistically
+            disaggregated to census geographies by Fekrazad (2025) using Regionalized Land Cover
+            Regression — precinct votes are allocated to ZCTAs in proportion to modeled household
+            population, so vote counts are <em>fractional estimates</em>, not certified tallies.
+            Coverage is the conterminous U.S. only (no Alaska or Hawaii), and any ZCTA-year built on
+            fewer than 50 fractional two-party votes is masked. Aggregated back up, the covered
+            ZCTAs reproduce the official national two-party margins to within a tenth of a point in
+            both years.
+          </p>
+          <p>
+            The political layers use a red–blue diverging scale following U.S. electoral convention
+            and are deliberately excluded from the composite health score, the 26-measure
+            correlation/PCA/clustering analyses, and the per-ZIP measure strips. They appear on the
+            map, in each ZIP&apos;s snapshot header, and in the{" "}
+            <Link href="/?p=story&s=red-blue-health">politics &amp; health story</Link>. As with
+            everything else here, the associations are ecological — about places, not voters.
+          </p>
+
           <h2>Missing data</h2>
           <p>
             ZIP/ZCTA areas without an estimate for the selected measure are drawn in a neutral grey
@@ -167,7 +182,7 @@ export default async function MethodsPage() {
         <article className="prose">
           <h2>The stories: PCA, clustering, and gradients</h2>
           <p>
-            The <Link href="/stories">stories section</Link> is precomputed by{" "}
+            The <Link href="/?p=stories">stories section</Link> is precomputed by{" "}
             <code>data-prep/analytics_v3.py</code> from the same parquet source, over the ~23,800
             ZIP/ZCTA areas with complete data on all 26 measures (coverage is limited mainly by the
             newer social-needs measures, especially loneliness, so the smallest rural areas are
@@ -240,8 +255,8 @@ export default async function MethodsPage() {
 
           <p>
             For the underlying files and per-measure provenance, see{" "}
-            <Link href="/sources">Sources &amp; provenance</Link>. To explore the data, open the{" "}
-            <Link href="/atlas">interactive atlas</Link>.
+            <Link href="/?p=sources">Sources &amp; provenance</Link>. To explore the data, open the{" "}
+            <Link href="/?p=atlas">interactive atlas</Link>.
           </p>
         </article>
       </div>

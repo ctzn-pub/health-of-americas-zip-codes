@@ -1,21 +1,14 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { getCoverageReport, getMetricCatalog } from "@/lib/serverData";
 
-export const metadata: Metadata = {
-  title: "Sources & provenance",
-  description:
-    "The exact files and per-measure provenance behind the atlas: CDC PLACES 2025 ZCTA estimates, ACS demographics, ADI context, tract-to-ZCTA backfill, and public PMTiles geometry.",
-  alternates: { canonical: "/sources" },
-};
-
 const nf = new Intl.NumberFormat("en-US");
 
-export default async function SourcesPage() {
+export default async function SourcesSection() {
   const [catalog, coverage] = await Promise.all([getMetricCatalog(), getCoverageReport()]);
   const pmtiles = catalog.sources?.pmtiles ?? "";
   const parquet = catalog.sources?.parquet ?? "raw_data/zcta_atlas.parquet";
   const metadata = catalog.sources?.metadata ?? "raw_data/zcta_atlas.parquet.meta.json";
+  const politicsParquet = catalog.sources?.politics_parquet ?? "raw_data/zcta_swing_atlas.parquet";
   const rows = coverage.rows;
 
   return (
@@ -63,6 +56,16 @@ export default async function SourcesPage() {
                   <code style={{ wordBreak: "break-all" }}>{metadata}</code>
                 </td>
               </tr>
+              <tr>
+                <td>Politics parquet</td>
+                <td>
+                  Build-time political source: 2016/2020 precinct returns disaggregated to ZCTAs
+                  (Fekrazad 2025, RLCR) — presidential margins and swing
+                </td>
+                <td>
+                  <code style={{ wordBreak: "break-all" }}>{politicsParquet}</code>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -95,9 +98,21 @@ export default async function SourcesPage() {
             geography, served through the existing PMTiles archive.
           </p>
 
+          <p>
+            The political layers come from precinct-level 2016 and 2020 general-election returns
+            disaggregated to ZCTAs by{" "}
+            <a href="https://doi.org/10.1038/s41597-025-05140-3" target="_blank" rel="noopener noreferrer">
+              Fekrazad (2025)
+            </a>{" "}
+            via Regionalized Land Cover Regression; vote counts are fractional estimates, coverage is
+            the conterminous U.S., and ZCTA-years with fewer than 50 fractional two-party votes are
+            masked.
+          </p>
+
           <div className="callout">
             <strong>Vintage.</strong> Health measures use CDC PLACES 2025. ADI uses Neighborhood Atlas
-            2023 v4.0.1. The app is a single cross-section; do not read it as a time series.
+            2023 v4.0.1. Presidential returns are the 2016 and 2020 general elections. The health
+            surface is a single cross-section; do not read it as a time series.
           </div>
           {rows && (
             <p>
@@ -160,8 +175,8 @@ export default async function SourcesPage() {
             does not require a new PMTiles file.
           </p>
           <p>
-            See <Link href="/methods">Methods &amp; limitations</Link> for how these numbers should and
-            should not be read, or open the <Link href="/atlas">interactive atlas</Link>.
+            See <Link href="/?p=methods">Methods &amp; limitations</Link> for how these numbers should and
+            should not be read, or open the <Link href="/?p=atlas">interactive atlas</Link>.
           </p>
         </article>
       </div>

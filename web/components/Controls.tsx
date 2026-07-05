@@ -38,7 +38,7 @@ export default function Controls({ metrics, regions, state, onChange }: Props) {
   return (
     <div className="controls" role="group" aria-label="Map controls">
       <div className="field">
-        <label htmlFor="metric-select">Health measure</label>
+        <label htmlFor="metric-select">Measure</label>
         <select
           id="metric-select"
           value={state.metric}

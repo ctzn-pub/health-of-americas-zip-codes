@@ -37,8 +37,16 @@ export function decode(sp: URLSearchParams): AppState {
   };
 }
 
-export function encode(s: AppState): string {
+export function encode(s: AppState, carry?: URLSearchParams): string {
   const p = new URLSearchParams();
+  // SPA page routing params (p = section, s = story slug) live alongside atlas state and
+  // must survive atlas updates.
+  if (carry) {
+    for (const k of ["p", "s"]) {
+      const v = carry.get(k);
+      if (v) p.set(k, v);
+    }
+  }
   for (const [k, v] of Object.entries(s)) {
     if (v === undefined || v === "" || (DEFAULTS as unknown as Record<string, unknown>)[k] === v) continue;
     p.set(k, String(v));
@@ -52,8 +60,9 @@ export function useUrlState(): [AppState, (patch: Partial<AppState>) => void] {
   const state = decode(new URLSearchParams(sp.toString()));
   const set = useCallback(
     (patch: Partial<AppState>) => {
-      const next = { ...decode(new URLSearchParams(window.location.search)), ...patch };
-      const qs = encode(next);
+      const current = new URLSearchParams(window.location.search);
+      const next = { ...decode(current), ...patch };
+      const qs = encode(next, current);
       router.replace(qs ? `?${qs}` : "?", { scroll: false });
     },
     [router],

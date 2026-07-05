@@ -19,6 +19,9 @@ export function useFeatureStateMetric(
   const painted = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!map || !ready || !payload) return;
+    // The SPA can unmount/remount the atlas (section switches); a re-run of this effect
+    // can then race a removed Map whose style/source is already torn down.
+    if (!map.getStyle?.() || !map.getSource(source)) return;
     const entries = Object.entries(payload.values);
     const sorted = entries.map(([, v]) => v).sort((a, b) => a - b);
 
@@ -47,6 +50,7 @@ export function setInteractionState(
   id: string | null,
   prev: string | null,
 ) {
+  if (!map.getStyle?.() || !map.getSource(source)) return;
   if (prev && prev !== id) map.setFeatureState({ source, sourceLayer, id: prev }, { [field]: false });
   if (id) map.setFeatureState({ source, sourceLayer, id }, { [field]: true });
 }

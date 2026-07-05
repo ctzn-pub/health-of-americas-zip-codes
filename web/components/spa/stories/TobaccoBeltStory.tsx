@@ -1,16 +1,17 @@
-import type { Metadata } from "next";
+"use client";
 import { OutcomeMap, StateStrip } from "@/components/stories/OutcomePanels";
 import { SmokingScatter } from "@/components/stories/OutcomeScatters";
 import { StoryCaveat, StoryFig, StoryHead, StoryNext } from "@/components/stories/StoryShell";
-import { getSmoking } from "@/lib/serverData";
+import { loadSmoking } from "@/lib/data";
 import { STORIES } from "@/lib/stories";
+import { usePayload } from "@/lib/useData";
+import StoryLoading from "./StoryLoading";
 
 const story = STORIES.find((s) => s.slug === "tobacco-belt")!;
 
-export const metadata: Metadata = { title: story.title, description: story.dek };
-
-export default async function TobaccoBeltStory() {
-  const sm = await getSmoking();
+export default function TobaccoBeltStory() {
+  const sm = usePayload(loadSmoking);
+  if (!sm) return <StoryLoading />;
   const under = sm.states.slice(0, 3);
   const over = sm.states.slice(-3).reverse();
 

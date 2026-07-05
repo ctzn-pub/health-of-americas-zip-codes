@@ -50,6 +50,13 @@ export const STORIES: StoryDef[] = [
     title: "Smoking: deprivation predicts it, culture bends it",
     dek: "No measure tracks neighborhood deprivation more tightly than smoking (ρ = 0.80). Subtract that prediction and what remains is a map of history: the tobacco belt, Utah, and the casino frontier.",
   },
+  {
+    slug: "red-blue-health",
+    kicker: "Politics & health",
+    title: "The political geography of health",
+    dek: "Precinct returns disaggregated to every ZIP code put a two-party margin next to all 26 health measures. Republican-leaning ZIP codes carry more smoking, COPD, and heart disease; several measures are worst at both political extremes.",
+  },
 ];
 
-export const storyPath = (slug: string) => `/stories/${slug}/`;
+// SPA: every story renders inside the single page, addressed by query params.
+export const storyPath = (slug: string) => `/?p=story&s=${slug}`;

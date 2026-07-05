@@ -1,14 +1,16 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
-import { STORIES } from "@/lib/stories";
 
 export const dynamic = "force-static";
 
+// Single-page app: every section lives on "/" behind query params, so the sitemap
+// carries just the root document (crawlers ignore query-only variants anyway).
 export default function sitemap(): MetadataRoute.Sitemap {
-  const routes = ["", "/atlas", "/stories", ...STORIES.map((s) => `/stories/${s.slug}`), "/methods", "/sources"];
-  return routes.map((route) => ({
-    url: `${SITE_URL}${route}`,
-    changeFrequency: "monthly",
-    priority: route === "" ? 1 : 0.7,
-  }));
+  return [
+    {
+      url: `${SITE_URL}/`,
+      changeFrequency: "monthly",
+      priority: 1,
+    },
+  ];
 }

@@ -11,6 +11,7 @@ import type {
   MentalHealthPayload,
   MetricCatalog,
   PcaPayload,
+  PoliticsPayload,
   RegionCatalog,
   SmokingPayload,
   WealthGapPayload,
@@ -53,6 +54,7 @@ export const getGradients = () => readJson<GradientsPayload>("analytics/gradient
 export const getMentalHealth = () => readJson<MentalHealthPayload>("analytics/mental_health.json");
 export const getSmoking = () => readJson<SmokingPayload>("analytics/smoking.json");
 export const getWealthGap = () => readJson<WealthGapPayload>("analytics/wealth_gap.json");
+export const getPolitics = () => readJson<PoliticsPayload>("analytics/politics.json");
 
 export interface LandingStats {
   nZip: number;

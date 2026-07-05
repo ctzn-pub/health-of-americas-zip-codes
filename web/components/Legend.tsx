@@ -1,5 +1,5 @@
 "use client";
-import { legendStops, NODATA } from "@/lib/colors";
+import { legendStops, NODATA, type ScaleKind } from "@/lib/colors";
 import type { Mode } from "@/lib/types";
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   fmt: (n: number) => string;
   title: string;
   lowerIsBetter: boolean;
+  kind?: ScaleKind;
 }
 
 const MODE_DESC: Record<Mode, string> = {
@@ -16,18 +17,25 @@ const MODE_DESC: Record<Mode, string> = {
   gap: "Difference from U.S. average",
   percentile: "National percentile (0–100)",
 };
+const POLITICAL_MODE_DESC: Record<Mode, string> = {
+  rate: "D − R, percentage points",
+  gap: "Difference from the national value",
+  percentile: "National percentile (0–100)",
+};
 
-export default function Legend({ mode, domain, benchmark, fmt, title, lowerIsBetter }: Props) {
-  const stops = legendStops(mode, domain, benchmark, fmt);
+export default function Legend({ mode, domain, benchmark, fmt, title, lowerIsBetter, kind = "sequential" }: Props) {
+  const political = kind === "diverging";
+  const desc = (political ? POLITICAL_MODE_DESC : MODE_DESC)[mode];
+  const stops = legendStops(mode, domain, benchmark, fmt, kind);
   const gradient = `linear-gradient(to right, ${stops.map((s) => `${s.color} ${Math.round(s.t * 100)}%`).join(", ")})`;
   // For the diverging gap ramp, name what each pole MEANS (not just signed numbers).
   // Warm/high end = worse when lower_is_better; cool/low end = better.
-  const lowEnd = lowerIsBetter ? "Better than U.S." : "Worse than U.S.";
-  const highEnd = lowerIsBetter ? "Worse than U.S." : "Better than U.S.";
+  const lowEnd = political ? "More Republican" : lowerIsBetter ? "Better than U.S." : "Worse than U.S.";
+  const highEnd = political ? "More Democratic" : lowerIsBetter ? "Worse than U.S." : "Better than U.S.";
   return (
-    <div className="legend" role="group" aria-label={`Legend: ${title}, ${MODE_DESC[mode]}`}>
+    <div className="legend" role="group" aria-label={`Legend: ${title}, ${desc}`}>
       <div className="legend-title">
-        {title} · <span className="muted">{MODE_DESC[mode]}</span>
+        {title} · <span className="muted">{desc}</span>
       </div>
       <div className="ramp" style={{ background: gradient }} aria-hidden />
       <div className="ticks">
@@ -35,7 +43,7 @@ export default function Legend({ mode, domain, benchmark, fmt, title, lowerIsBet
           <span key={i} style={{ fontVariantNumeric: "tabular-nums" }}>{s.label}</span>
         ))}
       </div>
-      {mode === "gap" && (
+      {(mode === "gap" || political) && (
         <div className="legend-poles" aria-hidden>
           <span>← {lowEnd}</span>
           <span>{highEnd} →</span>

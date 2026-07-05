@@ -1,17 +1,17 @@
-import type { Metadata } from "next";
+"use client";
 import WealthHealthGaps, {
   WealthCorrelationGrid,
   WealthDecileLines,
   WealthScoreProfile,
 } from "@/components/stories/WealthGapCharts";
 import { StoryCaveat, StoryFig, StoryHead, StoryNext } from "@/components/stories/StoryShell";
+import { loadWealthGap } from "@/lib/data";
 import { fmtPop } from "@/lib/format";
-import { getWealthGap } from "@/lib/serverData";
 import { STORIES } from "@/lib/stories";
+import { usePayload } from "@/lib/useData";
+import StoryLoading from "./StoryLoading";
 
 const story = STORIES.find((s) => s.slug === "wealth-gap")!;
-
-export const metadata: Metadata = { title: story.title, description: story.dek };
 
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -27,8 +27,9 @@ function num(v: number | null | undefined, digits = 0) {
   return v == null ? "-" : v.toFixed(digits);
 }
 
-export default async function WealthGapStory() {
-  const wealth = await getWealthGap();
+export default function WealthGapStory() {
+  const wealth = usePayload(loadWealthGap);
+  if (!wealth) return <StoryLoading />;
   const groups = Object.fromEntries(wealth.groups.map((g) => [g.id, g]));
   const bottom = groups.bottom;
   const top = groups.top;

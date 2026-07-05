@@ -8,11 +8,12 @@ export interface MetricMeta {
   label: string;
   short_label: string;
   topic: string;
-  unit: "percent" | "percentile";
+  kind?: "political"; // absent = health/social measure; political layers are map/story-only
+  unit: "percent" | "percentile" | "points";
   format: string; // d3 format spec, e.g. ".1f"
   lower_is_better: boolean;
   domain: [number, number, number]; // [min, benchmark/mid, max]
-  scale_kind: "sequential";
+  scale_kind: "sequential" | "diverging";
   benchmark_kind: string;
   benchmark: number;
   p90: number;
@@ -42,7 +43,13 @@ export interface MetricCatalog {
   metrics: MetricMeta[];
   default_metric: string;
   generated_at: string;
-  sources: { pmtiles: string; parquet: string; metadata?: string };
+  sources: {
+    pmtiles: string;
+    parquet: string;
+    metadata?: string;
+    politics_parquet?: string;
+    politics_metadata?: string;
+  };
 }
 
 export interface MapValues {
@@ -225,7 +232,8 @@ export interface ProfileZip {
     number | null,
     boolean | null,
   ]; // [ADI, income, poverty, college, Black, Hispanic, 65+, urban]
-  m: ([number, number] | null)[]; // per metric, in metric_catalog order: [value, national pct] | null
+  p?: [number | null, number | null, number | null] | null; // [margin_2016, margin_2020, swing] pct pts, + = more Democratic
+  m: ([number, number] | null)[]; // per health metric, in metric_catalog order (kind !== "political"): [value, national pct] | null
 }
 export interface ProfileShard {
   zips: Record<string, ProfileZip>;
@@ -437,6 +445,56 @@ export interface SmokingPayload {
     pop: number[];
   };
   map: OutcomeMapData;
+  generated_at: string;
+}
+
+// politics story payload (analytics/politics.json, emitted by data-prep/analytics_politics.py)
+export interface PoliticsLeanBin {
+  id: string;
+  label: string;
+  lo: number | null; // margin bin edges in pct points; null = open-ended
+  hi: number | null;
+  n: number;
+  population: number;
+  margin: number; // pop-weighted mean 2020 margin
+  swing: number | null;
+  context: { adi: number | null; income: number | null; college: number | null };
+  metrics: Record<string, number | null>; // pop-weighted mean per health measure
+}
+
+export interface PoliticsPayload {
+  national: {
+    margin_2016: number;
+    margin_2020: number;
+    swing: number;
+    n_margin: number;
+    n_swing: number;
+    zcta_lean_r: number;
+    zcta_lean_d: number;
+    pop_lean_r: number;
+    pop_lean_d: number;
+    zcta_shift_r: number;
+    zcta_shift_d: number;
+    min_votes: number;
+  };
+  method: string;
+  source: string;
+  source_url: string;
+  lean_bins: PoliticsLeanBin[];
+  metrics: {
+    id: string;
+    label: string;
+    short: string;
+    topic: string;
+    rho_margin: number | null; // Spearman vs 2020 margin (+ = higher where more Democratic)
+    rho_swing: number | null; // Spearman vs 2016->2020 swing
+    dem: number | null; // pop-weighted mean where margin > +5
+    rep: number | null; // pop-weighted mean where margin < -5
+    gap: number | null; // rep - dem
+  }[];
+  swing_curve: { points: ScatterPoint[]; loess: [number, number][]; x: string; y: string };
+  shift_right: { zip: string; city: string; state: string; population: number; m16: number; m20: number; swing: number }[];
+  shift_left: { zip: string; city: string; state: string; population: number; m16: number; m20: number; swing: number }[];
   generated_at: string;
 }
 

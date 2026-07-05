@@ -17,10 +17,10 @@ export default function SiteFooter() {
         <div>
           <h4>Explore</h4>
           <div className="foot-links">
-            <Link href="/atlas">Interactive atlas</Link>
-            <Link href="/stories">Stories — what the data teaches</Link>
-            <Link href="/methods">Methods &amp; limitations</Link>
-            <Link href="/sources">Sources &amp; provenance</Link>
+            <Link href="/?p=atlas">Interactive atlas</Link>
+            <Link href="/?p=stories">Stories — what the data teaches</Link>
+            <Link href="/?p=methods">Methods &amp; limitations</Link>
+            <Link href="/?p=sources">Sources &amp; provenance</Link>
           </div>
         </div>
         <div>

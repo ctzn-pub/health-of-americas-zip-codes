@@ -29,7 +29,7 @@ export default function ZipSearch({
     }
     setMsg(null);
     if (onSubmit) onSubmit(zip);
-    else router.push(`/atlas?selected=${zip}&view=snapshot`);
+    else router.push(`/?p=atlas&view=snapshot&selected=${zip}`);
   }
 
   const input = (

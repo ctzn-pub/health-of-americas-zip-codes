@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import maplibregl, { Map as MLMap } from "maplibre-gl";
 import * as pmtiles from "pmtiles";
 import { useFeatureStateMetric, setInteractionState } from "./useFeatureStateMetric";
-import { maplibreColorExpr, NODATA, INK } from "@/lib/colors";
+import { maplibreColorExpr, NODATA, INK, type ScaleKind } from "@/lib/colors";
 import { PMTILES_URL, SOURCE_LAYER, JOIN_KEY } from "@/lib/types";
 import type { MapValues, Mode } from "@/lib/types";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -14,6 +14,7 @@ interface Props {
   mode: Mode;
   domain: [number, number, number];
   benchmark: number;
+  kind?: ScaleKind;
   bounds: Bounds;
   selected?: string;
   hovered?: string | null;
@@ -25,7 +26,7 @@ const reduceMotion = () =>
   typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 export default function MapChoropleth({
-  payload, mode, domain, benchmark, bounds, selected, hovered, onSelect, onHover,
+  payload, mode, domain, benchmark, kind = "sequential", bounds, selected, hovered, onSelect, onHover,
 }: Props) {
   const elRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
@@ -85,7 +86,7 @@ export default function MapChoropleth({
         source: "geo",
         "source-layer": SOURCE_LAYER,
         paint: {
-          "fill-color": maplibreColorExpr(mode, domain, benchmark),
+          "fill-color": maplibreColorExpr(mode, domain, benchmark, kind),
           "fill-opacity": [
             "case",
             ["boolean", ["feature-state", "selected"], false], 1,
@@ -160,9 +161,9 @@ export default function MapChoropleth({
   // mode / domain change -> swap the paint expression ONLY (no rebuild, no refetch)
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !ready) return;
-    map.setPaintProperty("geo-fill", "fill-color", maplibreColorExpr(mode, domain, benchmark));
-  }, [mode, domain, benchmark, ready]);
+    if (!map || !ready || !map.getStyle?.() || !map.getLayer("geo-fill")) return;
+    map.setPaintProperty("geo-fill", "fill-color", maplibreColorExpr(mode, domain, benchmark, kind));
+  }, [mode, domain, benchmark, kind, ready]);
 
   // region change -> fitBounds
   useEffect(() => {
