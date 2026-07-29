@@ -18,7 +18,7 @@ export interface AppState {
 }
 
 export const DEFAULTS: AppState = {
-  view: "measure",
+  view: "snapshot",
   metric: "diabetes",
   mode: "gap",
   region: "us",

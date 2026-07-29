@@ -98,7 +98,7 @@ export default function Controls({ metrics, regions, state, onChange }: Props) {
       <button
         className="btn"
         type="button"
-        onClick={() => onChange({ ...DEFAULTS, selected: undefined })}
+        onClick={() => onChange({ ...DEFAULTS, view: "measure", selected: undefined })}
         title="Reset to the default view"
       >
         Reset
