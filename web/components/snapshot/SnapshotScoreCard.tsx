@@ -110,6 +110,10 @@ export default function SnapshotScoreCard({
           </p>
         </div>
       )}
+      {/* .snap-body / .snap-summary let the full-width (selected-ZIP) layout put the score
+          beside the standouts; in the narrow sidebar they stay a plain single column. */}
+      <div className="snap-body">
+        <div className="snap-summary">
       {score ? (
         <>
           <ScoreGauge score={score.score} />
@@ -138,6 +142,7 @@ export default function SnapshotScoreCard({
           </Link>
         </p>
       )}
+        </div>
 
       {(strengths.length > 0 || concerns.length > 0) && (
         <div className="standouts" aria-label="What stands out for this ZIP">
@@ -185,6 +190,7 @@ export default function SnapshotScoreCard({
           )}
         </div>
       )}
+      </div>
 
       {score && (
         <p className="snap-caveat">

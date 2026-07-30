@@ -91,7 +91,7 @@ export default async function StoriesIndexSection() {
       <p className="muted" style={{ marginTop: 28, fontSize: 13, maxWidth: "72ch" }}>
         All findings are ecological (about places, not people) and based on model-based small-area
         estimates. Methods, caveats, and reproduction steps are documented in the{" "}
-        <a href="#methods">methods section</a> below.
+        <a href="/?view=about#about-methods">methods section</a> on the About page.
       </p>
     </div>
   );

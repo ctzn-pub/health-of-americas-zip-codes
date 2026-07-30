@@ -255,7 +255,7 @@ export default async function MethodsSection() {
 
           <p>
             For the underlying files and per-measure provenance, see{" "}
-            <a href="#sources">Sources &amp; provenance</a>. To explore the data, open the{" "}
+            <a href="/?view=about#about-sources">Sources &amp; provenance</a>. To explore the data, open the{" "}
             <Link href="/">interactive atlas</Link>.
           </p>
         </article>

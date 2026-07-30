@@ -14,11 +14,12 @@ export const SITE = {
     "An interactive one-page atlas of 26 burden-oriented health and social-need measures plus 2016/2020 presidential margins across 32,409 U.S. ZIP/ZCTA areas, with ACS demographics, ADI context, state comparisons, and modeled CDC PLACES-style estimates.",
 } as const;
 
-// One-page app: the atlas is "/", stories are a view toggle, methods/sources are
-// in-page accordions reached by hash.
+// One-page app: every view is a query-param toggle on "/", so the top nav IS the view
+// switcher (there are no in-page tabs). Home is pick-a-ZIP; methods/sources/credits all
+// live under About.
 export const NAV: { href: string; key: string; label: string }[] = [
-  { href: "/", key: "atlas", label: "Atlas" },
+  { href: "/", key: "snapshot", label: "Pick a ZIP" },
+  { href: "/?view=measure", key: "measure", label: "By measure" },
   { href: "/?view=stories", key: "stories", label: "Stories" },
-  { href: "#methods", key: "methods", label: "Methods" },
-  { href: "#sources", key: "sources", label: "Sources" },
+  { href: "/?view=about", key: "about", label: "About" },
 ];

@@ -175,7 +175,7 @@ export default async function SourcesSection() {
             does not require a new PMTiles file.
           </p>
           <p>
-            See <a href="#methods">Methods &amp; limitations</a> for how these numbers should and
+            See <a href="/?view=about#about-methods">Methods &amp; limitations</a> for how these numbers should and
             should not be read, or open the <Link href="/">interactive atlas</Link>.
           </p>
         </article>

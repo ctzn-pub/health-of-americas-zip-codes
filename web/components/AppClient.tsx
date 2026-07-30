@@ -74,11 +74,21 @@ function panelDefs(political: boolean, shortLabel = ""): { Cmp: any; title: stri
   ];
 }
 
-export default function AppClient({ storiesIndex }: { storiesIndex?: ReactNode }) {
+export default function AppClient({
+  storiesIndex,
+  aboutSection,
+}: {
+  storiesIndex?: ReactNode;
+  aboutSection?: ReactNode;
+}) {
   const [state, setState] = useUrlState();
+  const isAbout = state.view === "about";
   const isSnap = state.view === "snapshot";
   const isStories = state.view === "stories";
   const activeStory = isStories && state.story && STORIES.some((s) => s.slug === state.story) ? state.story : undefined;
+  // the two map-bearing views; "stories" and "about" are prose and show no atlas chrome
+  const isAtlas = isSnap || state.view === "measure";
+  const isMeasure = state.view === "measure";
 
   const [catalog, setCatalog] = useState<MetricCatalog | null>(null);
   const [regions, setRegions] = useState<RegionCatalog | null>(null);
@@ -104,12 +114,15 @@ export default function AppClient({ storiesIndex }: { storiesIndex?: ReactNode }
     loadMetricCatalog().then(setCatalog).catch(() => {});
     loadRegionCatalog().then(setRegions).catch(() => {});
     loadGeoCatalog().then(setGeo).catch(() => {});
-    // legacy ?p=methods / ?p=sources links → the in-page accordions
+    // legacy ?p=methods / ?p=sources links → the matching section of the About view.
+    // decode() already resolves these to view "about"; this just drops the stale param and
+    // scrolls to the right appendix once it has painted.
     const p = new URLSearchParams(window.location.search).get("p");
     if (p === "methods" || p === "sources") {
-      window.history.replaceState(null, "", `/#${p}`);
-      window.dispatchEvent(new HashChangeEvent("hashchange"));
+      setState({ view: "about" });
+      requestAnimationFrame(() => document.getElementById(`about-${p}`)?.scrollIntoView());
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const meta: MetricMeta | null = useMemo(() => {
@@ -136,7 +149,7 @@ export default function AppClient({ storiesIndex }: { storiesIndex?: ReactNode }
 
   // measure payloads (skip in snapshot/stories views)
   useEffect(() => {
-    if (!meta || isSnap || isStories) return;
+    if (!meta || !isMeasure) return;
     let alive = true;
     setLoading(true);
     Promise.all([loadMapValues(meta.metric_id), loadCharts(meta.metric_id), loadInsights(meta.metric_id)])
@@ -146,7 +159,7 @@ export default function AppClient({ storiesIndex }: { storiesIndex?: ReactNode }
       })
       .catch(() => alive && setLoading(false));
     return () => { alive = false; };
-  }, [meta, isSnap, isStories]);
+  }, [meta, isMeasure]);
 
   // snapshot base payloads (composite map + distributions + state means)
   useEffect(() => {
@@ -202,18 +215,117 @@ export default function AppClient({ storiesIndex }: { storiesIndex?: ReactNode }
   const placeOf = (rec?: GeoCatalog["zips"][string]) => (rec ? [rec[0], rec[1]].filter(Boolean).join(", ") : "");
   const stateMeans = profile?.c[1] && stateSummary ? stateSummary[profile.c[1]] : undefined;
 
-  const heading = isStories
-    ? "What the ZIP-code data teaches"
-    : isSnap
-      ? "A health snapshot for any ZIP code"
-      : "U.S. health outcomes, ZIP code by ZIP code";
-  const subCopy = isStories
-    ? `Eight data-driven essays precomputed from the full ${healthMetrics.length}-measure × 32k-area matrix — the structure behind the map, from the deprivation axis to presidential politics.`
-    : isSnap
-      ? `Pick a ZIP code to see where it lands across ${healthMetrics.length} health and social-need measures, with ACS demographics, ADI context, 2016–2020 presidential lean, and one experimental composite score.`
-      : `${healthMetrics.length} burden-oriented health measures plus presidential vote margin and swing, across 32,409 ZIP/ZCTA areas — mapped against the national average, neighborhood deprivation, and local demographic context.`;
+  const heading = isAbout
+    ? "About this atlas"
+    : isStories
+      ? "What the ZIP-code data teaches"
+      : isSnap
+        ? "A health snapshot for any ZIP code"
+        : "U.S. health outcomes, ZIP code by ZIP code";
+  const subCopy = isAbout
+    ? "Who built it, how the estimates are modeled, what they can and cannot support, and every underlying source."
+    : isStories
+      ? `Eight data-driven essays precomputed from the full ${healthMetrics.length}-measure × 32k-area matrix — the structure behind the map, from the deprivation axis to presidential politics.`
+      : isSnap
+        ? `Pick a ZIP code to see where it lands across ${healthMetrics.length} health and social-need measures, with ACS demographics, ADI context, 2016–2020 presidential lean, and one experimental composite score.`
+        : `${healthMetrics.length} burden-oriented health measures plus presidential vote margin and swing, across 32,409 ZIP/ZCTA areas — mapped against the national average, neighborhood deprivation, and local demographic context.`;
 
   const StoryCmp = activeStory ? STORY_COMPONENTS[activeStory] : null;
+
+  // In the snapshot view, a chosen ZIP promotes its card + per-measure strips above the map:
+  // the map is context for picking a place, not the answer, and keeping it on the fold hid
+  // everything below it. Without a selection the map leads, since it's the only way to browse.
+  const snapDetail = isSnap && !!selected && !!profile;
+
+  const mapSection = isAtlas && (
+    <div className={snapDetail ? "stage stage-map-last" : "stage"}>
+      <div className="map-col">
+        <div
+          className="map-frame"
+          aria-busy={mapBusy}
+          onMouseEnter={() => setOverMap(true)}
+          onMouseLeave={() => { setOverMap(false); setHovered(null); }}
+          onMouseMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); setPointer({ x: e.clientX - r.left, y: e.clientY - r.top }); }}
+        >
+          <MapChoropleth
+            payload={mapPayload}
+            mode={mapMode}
+            domain={mapMeta.domain}
+            benchmark={mapMeta.benchmark}
+            kind={mapMeta.scale_kind === "diverging" ? "diverging" : "sequential"}
+            bounds={bounds}
+            selected={selected}
+            hovered={hovered}
+            onSelect={onSelect}
+            onHover={setHovered}
+          />
+          <Legend
+            mode={mapMode}
+            domain={mapMeta.domain}
+            benchmark={mapMeta.benchmark}
+            fmt={mapFmt}
+            title={mapMeta.short_label}
+            lowerIsBetter={mapMeta.lower_is_better}
+            kind={mapMeta.scale_kind === "diverging" ? "diverging" : "sequential"}
+          />
+          {hovered && overMap && (
+            <div className="tooltip" style={{ left: Math.min(pointer.x + 14, 9999), top: pointer.y + 14 }}>
+              <div className="tt-name">{placeOf(hoverRec) || `ZIP ${hovered}`}</div>
+              <div className="tt-val">
+                {mapMeta.short_label}: {hoverVal != null ? mapFmt(hoverVal) : "no estimate"}
+                {hoverRec ? ` · ${fmtPop(hoverRec[5])} people` : ""}
+              </div>
+            </div>
+          )}
+          {mapBusy && <div className="tooltip" style={{ left: 14, top: 14, background: "var(--panel-2)" }}>Updating…</div>}
+        </div>
+        <p className="muted" style={{ fontSize: 12.5, marginTop: 8 }}>
+          {isSnap
+            ? "Shaded by overall health burden — deeper red means higher combined burden across available measures. Hover a ZIP for its percentile; click for its full snapshot."
+            : <>Hover a ZIP for its value; click to pin it. {meta.description}. Denominator: {meta.denominator}.{meta.missing_count > 0 ? ` ${meta.missing_count.toLocaleString()} ZIP/ZCTA rows have no estimate for this measure and draw as no-data where they are in the tiles.` : ""}</>}
+        </p>
+      </div>
+
+      {!snapDetail && (
+        <aside>
+          {isSnap ? (
+            <div className="snap-empty">
+              <h2>See any ZIP&apos;s health snapshot</h2>
+              <p className="muted">
+                Search a ZIP code above, or click any area on the map, to see how it compares across
+                all {healthMetrics.length} measures, ACS context, state averages, and the nation.
+              </p>
+              {selected && !profile && <p className="muted">Loading ZIP {selected}…</p>}
+            </div>
+          ) : (
+            <>
+              {selected && (
+                <div style={{ marginBottom: 12 }}>
+                  <ZipCard
+                    zip={selected}
+                    place={placeOf(geoRec)}
+                    region={geoRec?.[2] ?? undefined}
+                    population={geoRec?.[5]}
+                    county={geoRec?.[6]}
+                    source={geoRec?.[8]}
+                    backfilled={geoRec?.[10]}
+                    adi={geoRec?.[11]}
+                    income={geoRec?.[12]}
+                    politics={profile?.p ?? undefined}
+                    meta={meta}
+                    value={selectedValue}
+                    percentile={selectedPct}
+                    onClear={() => onSelect(null)}
+                  />
+                </div>
+              )}
+              {insights && <InsightRail insights={insights.insights} onSelect={onSelect} metricLabel={meta.label} political={isPolitical} />}
+            </>
+          )}
+        </aside>
+      )}
+    </div>
+  );
 
   return (
     <main id="main" className="app">
@@ -225,19 +337,11 @@ export default function AppClient({ storiesIndex }: { storiesIndex?: ReactNode }
         </header>
       )}
 
-      <div className="view-tabs" role="tablist" aria-label="Choose a view">
-        <button role="tab" aria-selected={isSnap} className={isSnap ? "active" : ""} onClick={() => setState({ view: "snapshot", story: undefined })}>
-          ZIP health snapshot
-        </button>
-        <button role="tab" aria-selected={!isSnap && !isStories} className={!isSnap && !isStories ? "active" : ""} onClick={() => setState({ view: "measure", story: undefined })}>
-          Explore by measure
-        </button>
-        <button role="tab" aria-selected={isStories} className={isStories ? "active" : ""} onClick={() => setState({ view: "stories" })}>
-          Stories
-        </button>
-      </div>
-
-      {isStories ? (
+      {isAbout ? (
+        <section className="about-pane" aria-label="About this atlas">
+          {aboutSection ?? <p className="muted" style={{ padding: 40 }}>Loading…</p>}
+        </section>
+      ) : isStories ? (
         <section className="stories-pane" aria-label="Data stories">
           {StoryCmp ? (
             <>
@@ -269,123 +373,52 @@ export default function AppClient({ storiesIndex }: { storiesIndex?: ReactNode }
         <Controls metrics={catalog.metrics} regions={regions?.regions ?? []} state={state} onChange={setState} />
       )}
 
-      {!isSnap && !isStories && metricInvalid && (
+      {isMeasure && metricInvalid && (
         <div className="notice" role="status">Unknown measure “{state.metric}”. Showing <strong>{meta.label}</strong> instead.</div>
       )}
 
-      {!isStories && (
-      <div className="stage">
-        <div className="map-col">
-          <div
-            className="map-frame"
-            aria-busy={mapBusy}
-            onMouseEnter={() => setOverMap(true)}
-            onMouseLeave={() => { setOverMap(false); setHovered(null); }}
-            onMouseMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); setPointer({ x: e.clientX - r.left, y: e.clientY - r.top }); }}
-          >
-            <MapChoropleth
-              payload={mapPayload}
-              mode={mapMode}
-              domain={mapMeta.domain}
-              benchmark={mapMeta.benchmark}
-              kind={mapMeta.scale_kind === "diverging" ? "diverging" : "sequential"}
-              bounds={bounds}
-              selected={selected}
-              hovered={hovered}
-              onSelect={onSelect}
-              onHover={setHovered}
-            />
-            <Legend
-              mode={mapMode}
-              domain={mapMeta.domain}
-              benchmark={mapMeta.benchmark}
-              fmt={mapFmt}
-              title={mapMeta.short_label}
-              lowerIsBetter={mapMeta.lower_is_better}
-              kind={mapMeta.scale_kind === "diverging" ? "diverging" : "sequential"}
-            />
-            {hovered && overMap && (
-              <div className="tooltip" style={{ left: Math.min(pointer.x + 14, 9999), top: pointer.y + 14 }}>
-                <div className="tt-name">{placeOf(hoverRec) || `ZIP ${hovered}`}</div>
-                <div className="tt-val">
-                  {mapMeta.short_label}: {hoverVal != null ? mapFmt(hoverVal) : "no estimate"}
-                  {hoverRec ? ` · ${fmtPop(hoverRec[5])} people` : ""}
-                </div>
-              </div>
-            )}
-            {mapBusy && <div className="tooltip" style={{ left: 14, top: 14, background: "var(--panel-2)" }}>Updating…</div>}
-          </div>
-          <p className="muted" style={{ fontSize: 12.5, marginTop: 8 }}>
-            {isSnap
-              ? "Shaded by overall health burden — deeper red means higher combined burden across available measures. Hover a ZIP for its percentile; click for its full snapshot."
-              : <>Hover a ZIP for its value; click to pin it. {meta.description}. Denominator: {meta.denominator}.{meta.missing_count > 0 ? ` ${meta.missing_count.toLocaleString()} ZIP/ZCTA rows have no estimate for this measure and draw as no-data where they are in the tiles.` : ""}</>}
-          </p>
-        </div>
-
-        <aside>
-          {isSnap ? (
-            selected && profile ? (
-              <SnapshotScoreCard
-                zip={selected}
-                profile={profile}
-                metrics={healthMetrics}
-                nMeasured={profile.m.filter(Boolean).length}
-                onClear={() => onSelect(null)}
-                onPickMetric={(id) => setState({ view: "measure", metric: id })}
-              />
-            ) : (
-              <div className="snap-empty">
-                <h2>See any ZIP&apos;s health snapshot</h2>
-                <p className="muted">
-                  Search a ZIP code above, or click any area on the map, to see how it compares across
-                  all {healthMetrics.length} measures, ACS context, state averages, and the nation.
-                </p>
-                {selected && !profile && <p className="muted">Loading ZIP {selected}…</p>}
-              </div>
-            )
-          ) : (
-            <>
-              {selected && (
-                <div style={{ marginBottom: 12 }}>
-                  <ZipCard
-                    zip={selected}
-                    place={placeOf(geoRec)}
-                    region={geoRec?.[2] ?? undefined}
-                    population={geoRec?.[5]}
-                    county={geoRec?.[6]}
-                    source={geoRec?.[8]}
-                    backfilled={geoRec?.[10]}
-                    adi={geoRec?.[11]}
-                    income={geoRec?.[12]}
-                    politics={profile?.p ?? undefined}
-                    meta={meta}
-                    value={selectedValue}
-                    percentile={selectedPct}
-                    onClear={() => onSelect(null)}
-                  />
-                </div>
-              )}
-              {insights && <InsightRail insights={insights.insights} onSelect={onSelect} metricLabel={meta.label} political={isPolitical} />}
-            </>
-          )}
-        </aside>
-      </div>
-      )}
-
-      {isSnap && selected && profile && dists && (
-        <section className="snap-strips-section" aria-label="Per-measure health snapshot">
-          <HealthSnapshot
+      {snapDetail && selected && profile && (
+        <div className="snap-detail">
+          <SnapshotScoreCard
+            zip={selected}
             profile={profile}
             metrics={healthMetrics}
-            politicalMetrics={politicalMetrics}
-            dists={dists}
-            stateMeans={stateMeans}
+            nMeasured={profile.m.filter(Boolean).length}
+            onClear={() => onSelect(null)}
             onPickMetric={(id) => setState({ view: "measure", metric: id })}
           />
-        </section>
+        </div>
       )}
 
-      {!isSnap && !isStories && (
+      {isSnap && selected && profile && (
+        dists ? (
+          <section className="snap-strips-section" aria-label="Per-measure health snapshot">
+            <HealthSnapshot
+              profile={profile}
+              metrics={healthMetrics}
+              politicalMetrics={politicalMetrics}
+              dists={dists}
+              stateMeans={stateMeans}
+              onPickMetric={(id) => setState({ view: "measure", metric: id })}
+            />
+          </section>
+        ) : (
+          <section className="snap-strips-section" aria-label="Per-measure health snapshot">
+            <p className="muted">Loading the per-measure detail…</p>
+          </section>
+        )
+      )}
+
+      {snapDetail && (
+        <h3 className="snap-map-heading">
+          Where this ZIP sits nationally
+          <span> — shaded by overall health burden. Click any area for its snapshot.</span>
+        </h3>
+      )}
+
+      {mapSection}
+
+      {isMeasure && (
         <section className="panels" aria-label="Analytical panels">
           {charts &&
             panelDefs(!!isPolitical, meta.short_label).map(({ Cmp, title, sub }) => (

@@ -6,7 +6,7 @@ import type { Mode } from "./types";
 // URL holds only what defines "what you're looking at" — linkable, back-button-able.
 // Transient hover stays out of the URL. The whole app is one page: "stories" is a
 // third view toggle, and `story` selects an article within it.
-export type View = "measure" | "snapshot" | "stories";
+export type View = "measure" | "snapshot" | "stories" | "about";
 
 export interface AppState {
   view: View; // "measure" = by-measure atlas, "snapshot" = by-place, "stories" = essays
@@ -25,7 +25,7 @@ export const DEFAULTS: AppState = {
 };
 
 const MODES: Mode[] = ["rate", "gap", "percentile"];
-const VIEWS: View[] = ["measure", "snapshot", "stories"];
+const VIEWS: View[] = ["measure", "snapshot", "stories", "about"];
 
 export function decode(sp: URLSearchParams): AppState {
   const mode = sp.get("mode");
@@ -38,6 +38,10 @@ export function decode(sp: URLSearchParams): AppState {
     story = sp.get("s") || story;
   } else if (p === "stories") {
     view = "stories";
+  } else if (p === "methods" || p === "sources") {
+    // methods/sources used to be their own routes, then in-page accordions; both now live
+    // under About, so old links resolve there instead of 404-ing on a missing anchor.
+    view = "about";
   }
   return {
     view: VIEWS.includes(view as View) ? (view as View) : DEFAULTS.view,
