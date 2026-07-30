@@ -490,12 +490,17 @@ details.table-fallback summary:hover { color: var(--accent-cool); }
 .snap-empty p { font-size: 13.5px; line-height: 1.6; margin: 0 0 6px; }
 
 /* ============================ snapshot: strips ============================ */
+/* The selected-ZIP reading column. At 1440px the strips and the 8-across context band
+   stretched the full page, which made every row a long eye-track from label to value and
+   read as "raw table" rather than a designed panel. Cap the column and centre it; the map
+   below stays full-bleed, so the page still uses its width where width helps. */
+.snap-detail, .snap-strips-section, .snap-map-heading { max-width: 1120px; margin-left: auto; margin-right: auto; }
 .snap-strips-section {
   margin-top: 24px; background: var(--panel); border: 1px solid var(--line);
   border-radius: var(--radius); padding: 18px 20px 20px; box-shadow: var(--shadow);
 }
 .context-band {
-  display: grid; grid-template-columns: repeat(8, minmax(94px, 1fr)); gap: 1px;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px;
   overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-sm); margin-bottom: 16px;
   background: var(--line);
 }
